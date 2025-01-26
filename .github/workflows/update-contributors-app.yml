@@ -26,6 +26,9 @@ jobs:
       - uses: actions/checkout@v4.2.0
 
       - name: Run get_developes.py script
+        env:
+          # Repo's path in format {OWNER}/{REPO}
+          GITHUB_REPOSITORY: ${{ github.action_repository }}
         run: python get_developers.py
 
       - name: Copy generated contributors.json to its correct place

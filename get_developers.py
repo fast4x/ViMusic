@@ -1,11 +1,9 @@
 import json
 import re
+from os import environ
 
 from bs4 import BeautifulSoup as BSoup, Tag
 from requests import get, Response
-
-contributors_url = 'https://api.github.com/repos/fast4x/rimusic/contributors'
-
 
 """
 Append more keys if needed, refrain from taking all.
@@ -47,6 +45,7 @@ def extract_user_id(img_tag: Tag) -> str:
     return match.group(1) if match else -1
 
 
+contributors_url = f'https://api.github.com/repos/{environ["GITHUB_REPOSITORY"]}/contributors'
 def get_latest_contributors() -> list[dict]:
     """
     Gets all the contributors of this repository via GitHub API.
