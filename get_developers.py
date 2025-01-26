@@ -1,104 +1,120 @@
-import re
-import requests
 import json
+import re
 
-        
-        
-contributors: list[dict]
-headers = {
-    'Authorization': 'Bearer ${{ secrets.GITHUB_TOKEN }}',
-    'Accept': 'application/vnd.github.v3+json'
-}
+from bs4 import BeautifulSoup as BSoup, Tag
+from requests import get, Response
 
-needed_keys = ['login', 'id', 'avatar_url', 'html_url', 'contributions']
-def filter_keys(entry: dict):
-    """
-    Deletes keys that are not defined in 'needed_keys'.
-    The list may be appended in the future
-    """
+contributors_url = 'https://api.github.com/repos/fast4x/rimusic/contributors'
+
+
+"""
+Append more keys if needed, refrain from taking all.
+More elements mean more loading time.
+"""
+contributors_keys = ['login', 'id', 'name', 'avatar_url', 'html_url', 'contributions']
+def filter_keys(entry: dict) -> None:
+    # Keys must be converted to list to
+    # prevent "modify-during-loop"
     for key in list(entry.keys()):
-        if not key in needed_keys:
+        if key not in contributors_keys:
             del entry[key]
 
 
-contributors_url: str = 'https://api.github.com/repos/fast4x/rimusic/contributors'
-def fetch_contributors() -> None:
+"""
+This pattern matches this string below:
+- https://avatars.githubusercontent.com/u/68310158?v=4
+with a few keys to notice:
+1. HTTP and HTTPS are accepted
+2. User's id (68310158) must be a number
+3. `?v=4` is totally optional
+"""
+avatar_url_regex = r"https?:\/\/avatars\.githubusercontent\.com\/u\/(\d+)(\?v=\d+)?"
+def extract_user_id(img_tag: Tag) -> str:
     """
-    Gets all the contributors of this repository with Github API.
+    Extracts and returns user's id from <img> tag.
+    If the id is not found, `-1` will be returned
+
+    :param img_tag: Must be img tag.
+    :return: user's id from "src"
+    :rtype: str
+    :raise ValueError: if [img_tag] isn't <img>
     """
-    global contributors
 
-    response = requests.get(contributors_url, headers=headers)
-    # Convert response from Github API to list of entries
-    contributors = json.loads(response.text)
+    if img_tag.name != 'img':
+        raise ValueError('not a <img> tag')
 
-    # Filter out unused keys to save space
-    #for entry in contributors:
-    #    filter_keys(entry)
+    match = re.match(avatar_url_regex, img_tag['src'])
+    return match.group(1) if match else -1
 
 
-filename: str = 'README.md'
-section: str = '###  **Developer / Designer that contribute:**'
-hyperlink_pattern = r'^-\s\[.*]\((https?://github.com/.*)\)$'
-def registered_devs() -> list[str]:
+def get_latest_contributors() -> list[dict]:
     """
-    Devs that are recognized in README.md
-    Returns a list of urls
+    Gets all the contributors of this repository via GitHub API.
     """
-    results: list[str] = []
 
-    with open(filename, 'r') as file:
-        found_header: bool = False
-        for line in file.readlines():
+    response: Response = get(contributors_url)
+    # Convert JSON string returned from GitHub API
+    # to dict-like object (easier to work on).
+    latest_contributors = json.loads(response.text)
 
-            if found_header:
-                match = re.match(hyperlink_pattern, line)
-                
-                if match:
-                    results.append(match.group(1))
-                else:
-                    # Stop when there's no more matches
-                    break
+    #
+    # Filter out unwanted keys of each dev to save some space
+    #
 
-            if not found_header and line.startswith(section):
-                found_header = True
+    # Each 'entry' represents a developer
+    for entry in latest_contributors:
+        filter_keys(entry)
 
-    return results
+    return latest_contributors
 
 
+def get_recognized_contributor_ids() -> list[int]:
+    """
+    Reads all devs listed in README.md and extracts
+    each dev "id" from their profile's url
+    """
+
+    with open('README.md', 'r') as readme_file:
+        file_data: str = readme_file.read()
+
+    # Parse only HTML code from README.md
+    soup: BSoup = BSoup(file_data, 'html.parser')
+    table: Tag = soup.find('table')
+
+    user_ids: list[int] = []
+    for img in table.find_all('img'):
+        dev_id: str = extract_user_id(img)
+
+        # Convert `str` to `int`
+        try:
+            user_ids.append(int(dev_id))
+        except ValueError:
+            # Don't do anything
+            pass
+
+    return user_ids
+
+
+#
+#    It STARTS here
+#
 if __name__ == '__main__':
-    fetch_contributors()
-    if len(contributors) == 0:
-        print(f'Could not fetch contributors')
+    # Get latest contributors
+    contributors: list[dict] = get_latest_contributors()
+    # Get recognized contributor ids
+    recognized_contributors_ids: list[int] = get_recognized_contributor_ids()
 
-    registered = registered_devs()
+    #
+    #  Filter out recognized contributors
+    #
+    recognized_contributors: list[dict] = []
+    for contributor in contributors:
+        if contributor['id'] in recognized_contributors_ids:
+            recognized_contributors.append(contributor)
 
-    devs: dict = {}
-    for entry in contributors:
-        dev_url: str = entry['html_url']
-        
-        if dev_url in registered:
-            devs[dev_url] = entry
-
-    github_id_pattern = r'https?://github.com/(.*)'
-    for dev_url in registered:
-        if not dev_url in list(devs.keys()):
-            match = re.match(github_id_pattern, dev_url)
-            if not match:
-                continue
-
-            response = requests.get(f'https://api.github.com/users/{match.group(1)}')
-            if response.status_code != 200:
-                print(f'Failed to get developer\'s information. Skipping...')
-                print(response.text)
-                continue
-
-            dev_json = json.loads(response.text)
-            filter_keys(dev_json)
-
-            devs[dev_url] = dev_json
-
+    #
+    #   Write contributors to a file named `contributors.json`
+    #
+    json_format: str = json.dumps(recognized_contributors)
     with open('contributors.json', 'w') as file:
-        file.write(json.dumps(list(devs.values()), indent=2))
-
-
+        file.write(json_format)
