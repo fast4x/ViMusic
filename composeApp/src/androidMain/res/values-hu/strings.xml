@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Csatlakozz a csoporthoz a Telegramban</string>
     <string name="social_github">GitHub</string>
     <string name="update">Frissítés</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Nem menti el a statisztikákhoz, előzményekhez és javaslatokhoz használt lejátszási adatokat a gyors képekben.</string>
     <string name="vertical_widget">Függőleges widget</string>
     <string name="horizontal_widget">Vízszintes widget</string>

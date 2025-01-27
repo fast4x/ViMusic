@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Liity ryhmään Telegramissa</string>
     <string name="social_github">GitHub</string>
     <string name="update">Päivitä</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Ei tallenna toiston tapahtumia, joita käytetään tilastoissa, historiassa ja pikavalinnan ehdotuksissa</string>
     <string name="vertical_widget">Pystysuora widgetti</string>
     <string name="horizontal_widget">Vaakasuora widgetti</string>
