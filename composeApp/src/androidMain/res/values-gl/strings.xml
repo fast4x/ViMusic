@@ -719,7 +719,7 @@
     <string name="error_no_internet">Non hai conexión de rede</string>
     <string name="error_timeout">Tempo de conexión esgotado</string>
     <string name="error_unknown">Erro descoñecido</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Actualizar o álbum</string>
     <string name="info_check_update_now">Comprobar agora</string>
     <string name="info_no_update_available">Sen actualización dispoñible</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Únete ao grupo en Telegram</string>
     <string name="social_github">GitHub</string>
     <string name="update">Actualización</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Non garda eventos de reprodución usados para estatísticas, historial e suxestións en imaxes rápidas</string>
     <string name="vertical_widget">Widget vertical</string>
     <string name="horizontal_widget">Widget horizontal</string>

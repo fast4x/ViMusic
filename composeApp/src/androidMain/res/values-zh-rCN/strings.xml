@@ -719,7 +719,7 @@
     <string name="error_no_internet">无网络连接</string>
     <string name="error_timeout">连接超时</string>
     <string name="error_unknown">未知错误</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">更新专辑</string>
     <string name="info_check_update_now">立即检查</string>
     <string name="info_no_update_available">没有可用更新</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">加入 Telegram 的群組</string>
     <string name="social_github">GitHub</string>
     <string name="update">更新</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">不会保存用于统计、历史和建议的快速播放历史</string>
     <string name="vertical_widget">垂直小部件</string>
     <string name="horizontal_widget">水平小部件</string>

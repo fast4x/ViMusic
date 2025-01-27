@@ -719,7 +719,7 @@
     <string name="error_no_internet">No hi ha connexió de xarxa</string>
     <string name="error_timeout">Temps d\'espera de connexió</string>
     <string name="error_unknown">Error desconegut</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Comprova-ho ara</string>
     <string name="info_no_update_available">No hi ha cap actualització disponible</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Uneix-te al grup a Telegram</string>
     <string name="social_github">GitHub</string>
     <string name="update">Actualitza</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">No es desen els esdeveniments de reproducció utilitzats per a les estadístiques, l\'historial i els suggeriments en imatges ràpides</string>
     <string name="vertical_widget">Giny vertical</string>
     <string name="horizontal_widget">Giny horitzontal</string>

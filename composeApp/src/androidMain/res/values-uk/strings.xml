@@ -719,7 +719,7 @@
     <string name="error_no_internet">Відсутнє мережеве з\'єднання</string>
     <string name="error_timeout">Час очікування підключення закінчився</string>
     <string name="error_unknown">Невідома помилка</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Оновити альбом</string>
     <string name="info_check_update_now">Перевірити</string>
     <string name="info_no_update_available">Немає доступних оновлень</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Приєднатися до групи в Telegram</string>
     <string name="social_github">GitHub</string>
     <string name="update">Оновити</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Не показувати та не зберігати нову історію відтворення</string>
     <string name="vertical_widget">Вертикальний віджет</string>
     <string name="horizontal_widget">Горизонтальний віджет</string>

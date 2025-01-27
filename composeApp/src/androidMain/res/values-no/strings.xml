@@ -719,7 +719,7 @@
     <string name="error_no_internet">Ingen nettverksforbindelse</string>
     <string name="error_timeout">Tidsavbrudd for tilkobling</string>
     <string name="error_unknown">Ukjent feil</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Sjekk nå</string>
     <string name="info_no_update_available">Ingen oppdatering tilgjengelig</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Bli med i gruppen på Telegram</string>
     <string name="social_github">GitHub</string>
     <string name="update">Oppdater</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Lagrer ikke avspillingshendelser brukt til statistikk, historie og forslag i hurtigvalg</string>
     <string name="vertical_widget">Vertikal widget</string>
     <string name="horizontal_widget">Horisontal widget</string>

@@ -719,7 +719,7 @@
     <string name="error_no_internet">인터넷 연결 안됨</string>
     <string name="error_timeout">연결 시간 초과</string>
     <string name="error_unknown">알 수 없는 오류</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">지금 확인</string>
     <string name="info_no_update_available">새로운 업데이트 없음</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">텔레그램 그룹에 참여하세요</string>
     <string name="social_github">GitHub</string>
     <string name="update">업데이트</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">통계, 기록, 빠른 추천을 위한 재생 기록을 저장하지 않습니다</string>
     <string name="vertical_widget">수직 위젯</string>
     <string name="horizontal_widget">수평 위젯</string>

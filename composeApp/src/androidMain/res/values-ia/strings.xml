@@ -719,7 +719,7 @@
     <string name="error_no_internet">Nulle connexion de rete</string>
     <string name="error_timeout">Connection timeout</string>
     <string name="error_unknown">Error incognite</string>
-    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\nThis action is irreversible.</string>
     <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Verifica ora</string>
     <string name="info_no_update_available">Nulle actualisation disponibile</string>
@@ -732,7 +732,7 @@
     <string name="social_telegram_info">Junge te al gruppo sur Telegram</string>
     <string name="social_github">GitHub</string>
     <string name="update">Actualisar</string>
-    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\\nThis action is irreversible.</string>
+    <string name="update_song">Do you really want to refetch this song? Playback time and cached data will be wiped.\nThis action is irreversible.</string>
     <string name="player_pause_listen_history_info">Non salveguarda le eventos de reproduction usate pro statisticas, chronologia e suggestiones in le selectiones rapide</string>
     <string name="vertical_widget">Widget vertical</string>
     <string name="horizontal_widget">Widget horizontal</string>
