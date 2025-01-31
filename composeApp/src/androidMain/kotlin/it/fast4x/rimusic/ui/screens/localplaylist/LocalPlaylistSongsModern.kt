@@ -212,6 +212,9 @@ import it.fast4x.rimusic.utils.updateLocalPlaylist
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
+import it.fast4x.rimusic.colorPalette
 
 
 @KotlinCsvExperimental
@@ -352,6 +355,26 @@ fun LocalPlaylistSongsModern(
     LaunchedEffect(Unit,playlistUpdateDialog){
         Database.asyncTransaction {
             totalSongsToUpdate = playlistAllSongs.filter { it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com/") == true && ((songAlbumInfo(it.asMediaItem.mediaId)?.id == null) || songArtistInfo(it.asMediaItem.mediaId).isEmpty()) }.size
+        }
+    }
+
+    var playlistDescription by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(playlistPreview?.playlist?.browseId) {
+        playlistPreview?.playlist?.browseId?.let { browseId ->
+            Innertube.playlistPage(BrowseBody(browseId = browseId))
+                ?.completed()
+                ?.getOrNull()
+                ?.let { response ->
+                    playlistDescription = response.description
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.takeUnless { it.equals("null", ignoreCase = true) }
+//                    SmartMessage(
+//                        "Fetched playlist description: ${response.description}, title: ${response.title}, info: ${response.otherInfo}",
+//                        type = PopupType.Info,
+//                        context = context
+//                    )
+                }
         }
     }
 
@@ -1076,6 +1099,20 @@ fun LocalPlaylistSongsModern(
                                 icon = painterResource(R.drawable.smart_shuffle)
                             )
                         }
+                        Spacer(modifier = Modifier.height(5.dp))
+
+//                        val loremIpsum = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+
+                        val description = playlistDescription ?: ""
+
+                        Text(
+                            text = description,
+                            color = colorPalette().text,
+                            textAlign = TextAlign.Left,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 4
+
+                        )
                         Spacer(modifier = Modifier.height(30.dp))
                     }
 
