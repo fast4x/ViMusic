@@ -36,7 +36,7 @@ import it.fast4x.rimusic.utils.isCompositionLaunched
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.visualizerEnabledKey
-import me.knighthat.typography
+import it.fast4x.rimusic.typography
 
 @UnstableApi
 @Composable

@@ -41,14 +41,13 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.enums.ClickLyricsText
 import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.ThumbnailCoverType
 import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.service.LoginRequiredException
 import it.fast4x.rimusic.service.NoInternetException
@@ -60,26 +59,24 @@ import it.fast4x.rimusic.service.UnplayableException
 import it.fast4x.rimusic.service.VideoIdMismatchException
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.ui.components.themed.VinylThumbnailCoverAnimation
+import it.fast4x.rimusic.ui.components.themed.RotateThumbnailCoverAnimation
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.utils.BlurTransformation
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
-import it.fast4x.rimusic.utils.conditional
+import it.fast4x.rimusic.utils.coverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.rememberPreference
-import it.fast4x.rimusic.utils.resize
-import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
+import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showvisthumbnailKey
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailTypeKey
 import it.fast4x.rimusic.utils.thumbnailpauseKey
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
 import timber.log.Timber
 import java.net.UnknownHostException
 import java.nio.channels.UnresolvedAddressException
@@ -170,18 +167,15 @@ fun Thumbnail(
 
     val coverPainter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(
-                window.mediaItem.mediaMetadata.artworkUri.thumbnail(
-                    thumbnailSizePx
-                )
-            )
+            .data(window.mediaItem.mediaMetadata.artworkUri.thumbnail(1200))
             .size(coil.size.Size.ORIGINAL)
             .build(),
         onError = { artImageAvailable = false },
         onSuccess = { artImageAvailable = true }
     )
 
-    val showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
+    val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
+    var coverThumbnailAnimation by rememberPreference(coverThumbnailAnimationKey, ThumbnailCoverType.Vinyl)
 
 
     AnimatedContent(
@@ -231,9 +225,9 @@ fun Thumbnail(
                         .fillMaxSize()
                         //.dropShadow(thumbnailShape(), colorPalette().overlay.copy(0.1f), 6.dp, 2.dp, 2.dp)
                         //.dropShadow(thumbnailShape(), colorPalette().overlay.copy(0.1f), 6.dp, (-2).dp, (-2).dp)
-                        .doubleShadowDrop(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape(), 4.dp, 8.dp)
+                        .doubleShadowDrop(if (showCoverThumbnailAnimation) CircleShape else thumbnailShape(), 4.dp, 8.dp)
                         //.clip(thumbnailShape())
-                        .clip(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape())
+                        .clip(if (showCoverThumbnailAnimation) CircleShape else thumbnailShape())
                 //.padding(14.dp)
                 else modifierUiType = modifier
                     .aspectRatio(1f)
@@ -241,7 +235,7 @@ fun Thumbnail(
                     //.padding(14.dp)
                     .fillMaxSize()
                     //.clip(thumbnailShape())
-                    .clip(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape())
+                    .clip(if (showCoverThumbnailAnimation) CircleShape else thumbnailShape())
 
 
 
@@ -251,8 +245,8 @@ fun Thumbnail(
             if (showthumbnail) {
                 if ((!isShowingLyrics && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail))
                     if (artImageAvailable) {
-                        if (showVinylThumbnailAnimation)
-                            VinylThumbnailCoverAnimation(
+                        if (showCoverThumbnailAnimation)
+                            RotateThumbnailCoverAnimation(
                                 painter = coverPainter,
                                 isSongPlaying = player.isPlaying,
                                 modifier = Modifier
@@ -268,8 +262,8 @@ fun Thumbnail(
                                             onDoubleTap = { onDoubleTap() }
                                         )
 
-                                    }
-
+                                    },
+                                type = coverThumbnailAnimation
                             )
                         else
                             Image (
@@ -376,7 +370,6 @@ fun Thumbnail(
                         size = thumbnailSizeDp,
                         mediaMetadataProvider = currentWindow.mediaItem::mediaMetadata,
                         durationProvider = player::getDuration,
-                        onMaximize = onMaximize,
                         isLandscape = isLandscape,
                         clickLyricsText = clickLyricsText,
                     )

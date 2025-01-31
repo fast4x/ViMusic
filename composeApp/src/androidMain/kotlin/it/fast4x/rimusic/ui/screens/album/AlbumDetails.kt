@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
@@ -37,10 +39,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -61,8 +65,13 @@ import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.requests.AlbumPage
+import it.fast4x.innertube.requests.albumPage
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.Database.Companion
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
@@ -75,9 +84,7 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
+import it.fast4x.rimusic.service.modern.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -92,7 +99,7 @@ import it.fast4x.rimusic.ui.components.themed.ItemsList
 import it.fast4x.rimusic.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.fast4x.rimusic.ui.components.themed.MultiFloatingActionsContainer
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.SelectorDialog
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.items.AlbumItem
@@ -118,6 +125,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -127,12 +135,21 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.models.SongAlbumMap
+import it.fast4x.rimusic.service.MyDownloadHelper
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.asAlbum
+import it.fast4x.rimusic.utils.mediaItemToggleLike
+import kotlinx.coroutines.flow.first
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,12 +162,13 @@ import timber.log.Timber
 fun AlbumDetails(
     navController: NavController,
     browseId: String,
-    albumPage: Innertube.PlaylistOrAlbumPage?,
+    albumPage: AlbumPage?,
     headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit,
     thumbnailContent: @Composable () -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
+
     val binder = LocalPlayerServiceBinder.current
     val menuState = LocalMenuState.current
 
@@ -159,6 +177,77 @@ fun AlbumDetails(
     //val albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/$browseId/albumPage")
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
+    var startSync by remember{ mutableStateOf(false) }
+    var songPlaylist by remember {
+        mutableIntStateOf(0)
+    }
+    var playlistsList by remember { mutableStateOf<List<Database.PlayListIdPosition>?>(null) }
+    var songExists by remember { mutableStateOf(false) }
+    var likedAt by remember {
+        mutableStateOf<Long?>(null)
+    }
+    var playTime by remember {
+        mutableStateOf<Long?>(null)
+    }
+    LaunchedEffect(startSync) {
+        withContext(Dispatchers.IO) {
+            songs.forEach {song ->
+                Database.asyncTransaction {
+                    songPlaylist = Database.songUsedInPlaylists(song.id)
+                    if (songPlaylist > 0) songExists = true
+                    playlistsList = Database.playlistsUsedForSong(song.id)
+                    likedAt = song.likedAt
+                    playTime = song.totalPlayTimeMs
+                    binder?.cache?.removeResource(song.id)
+                    binder?.downloadCache?.removeResource(song.id)
+                    Database.delete(song)
+
+                  Database.upsert(
+                    Album(
+                        id = browseId,
+                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else albumPage?.album?.title,
+                        thumbnailUrl = if (album?.thumbnailUrl?.startsWith(MODIFIED_PREFIX) == true) album?.thumbnailUrl else albumPage?.album?.thumbnail?.url,
+                        year = albumPage?.album?.year,
+                        authorsText = if (album?.authorsText?.startsWith(MODIFIED_PREFIX) == true) album?.authorsText else albumPage?.album?.authors
+                            ?.joinToString("") { it.name ?: "" },
+                        shareUrl = albumPage?.url,
+                        timestamp = System.currentTimeMillis(),
+                        bookmarkedAt = album?.bookmarkedAt
+                    ),
+                    albumPage
+                        ?.songs?.distinct()
+                        ?.map(Innertube.SongItem::asMediaItem)
+                        ?.onEach(Database::insert)
+                        ?.mapIndexed { position, mediaItem ->
+                            SongAlbumMap(
+                                songId = mediaItem.mediaId,
+                                albumId = browseId,
+                                position = position
+                            )
+                        } ?: emptyList()
+                  )
+
+                    if (songExists){
+                        insert(song)
+                        playlistsList?.forEach{item ->
+                            insert(
+                                SongPlaylistMap(
+                                    songId = song.id,
+                                    playlistId = item.playlistId,
+                                    position = item.position
+                                )
+                            )
+                        }
+                    }
+                    if (likedAt != null){
+                        Database.like(song.id,likedAt)
+                    }
+                    Database.incrementTotalPlayTimeMs(song.id,playTime ?: 0)
+                    startSync = false
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         Database.albumSongs(browseId).collect {
@@ -261,10 +350,9 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.title),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumTitle(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumTitle(browseId, it)
                     }
-                    //context.toast("Album Saved $it")
                 }
             },
             prefix = MODIFIED_PREFIX
@@ -277,8 +365,8 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.authors),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumAuthors(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumAuthors(browseId, it)
                     }
                     //context.toast("Album Saved $it")
                 }
@@ -294,8 +382,8 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.cover),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumCover(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumCover(browseId, it)
                     }
                     //context.toast("Album Saved $it")
                 }
@@ -311,10 +399,9 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.new_playlist),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.insert(Playlist(name = it))
+                    Database.asyncTransaction {
+                        insert(Playlist(name = it))
                     }
-                    //context.toast("Song Saved $it")
                 }
             }
         )
@@ -330,8 +417,8 @@ fun AlbumDetails(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.asMediaItem.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -343,8 +430,8 @@ fun AlbumDetails(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -370,11 +457,11 @@ fun AlbumDetails(
                 showConfirmDownloadAllDialog = false
                 downloadState = Download.STATE_DOWNLOADING
                 if (listMediaItems.isEmpty()) {
-                    if (songs.isNotEmpty() == true)
-                        songs.forEach {
+                    if (songs.filter { it.likedAt != -1L }.isNotEmpty()){
+                        songs.filter { it.likedAt != -1L }.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat(it.asMediaItem.mediaId)
                             }
                             manageDownload(
                                 context = context,
@@ -382,12 +469,13 @@ fun AlbumDetails(
                                 downloadState = false
                             )
                         }
+                    }
                 } else {
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -442,8 +530,9 @@ fun AlbumDetails(
     LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
         Box(
             modifier = Modifier
-                .background(colorPalette()
-.background0)
+                .background(
+                    colorPalette().background0
+                )
                 //.fillMaxSize()
                 .fillMaxHeight()
                 //.fillMaxWidth(if (navigationBarPosition == NavigationBarPosition.Left) 1f else contentWidth)
@@ -455,8 +544,9 @@ fun AlbumDetails(
                 //contentPadding = LocalPlayerAwareWindowInsets.current
                 //    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
                 modifier = Modifier
-                    .background(colorPalette()
-.background0)
+                    .background(
+                        colorPalette().background0
+                    )
                     .fillMaxSize()
             ) {
                 item(
@@ -504,32 +594,9 @@ fun AlbumDetails(
                                 //.padding(bottom = 20.dp)
                             )
 
-                            /*
-                            BasicText(
-                                text = albumPage?.year ?: "",
-                                style = typography().xs.medium,
-                                maxLines = 1,
-                                modifier = Modifier
-                                    //.padding(top = 10.dp)
-                                    .align(Alignment.BottomStart)
-                            )
-
-                            BasicText(
-                                text = songs.size.toString() + " "
-                                        + stringResource(R.string.songs)
-                                        + " - " + formatAsTime(totalPlayTimes),
-                                style = typography().xs.medium,
-                                maxLines = 1,
-                                modifier = Modifier
-                                    //.padding(top = 10.dp)
-                                    .align(Alignment.BottomEnd)
-                            )
-                             */
-
                             HeaderIconButton(
                                 icon = R.drawable.share_social,
-                                color = colorPalette()
-.text,
+                                color = colorPalette().text,
                                 iconSize = 24.dp,
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -580,7 +647,7 @@ fun AlbumDetails(
 
                 }
 
-                if (albumPage != null)
+                if (album?.year != null && songs.isNotEmpty())
                     item(
                         key = "infoAlbum"
                     ) {
@@ -592,7 +659,7 @@ fun AlbumDetails(
                                 .fillMaxWidth()
                         ) {
                             BasicText(
-                                text = "${albumPage?.year} - " + songs.size.toString() + " "
+                                text = "${album?.year} - " + songs.size.toString() + " "
                                         + stringResource(R.string.songs)
                                         + " - " + formatAsTime(totalPlayTimes),
                                 style = typography().xs.medium,
@@ -628,31 +695,46 @@ fun AlbumDetails(
                                         val bookmarkedAt =
                                             if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                        query {
+                                        Database.asyncTransaction {
                                             album
                                                 ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(Database::update)
+                                                ?.let(::update)
+                                        }
+
+                                        if (bookmarkedAt != null) {
+                                            MyDownloadHelper.autoDownloadWhenAlbumBookmarked(
+                                                context,
+                                                songs.map { it.asMediaItem })
                                         }
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_bookmark_album), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_bookmark_album),
+                                            context = context
+                                        )
                                     }
                                 ),
                             onClick = {}
                         )
                         HeaderIconButton(
                             icon = R.drawable.downloaded,
-                            color = colorPalette()
-.text,
+                            color = if (songs.any { it.likedAt != -1L }) colorPalette().text else colorPalette().textDisabled,
                             onClick = {},
                             modifier = Modifier
                                 .padding(horizontal = 5.dp)
                                 .combinedClickable(
                                     onClick = {
-                                        showConfirmDownloadAllDialog = true
+                                        if (songs.any { it.likedAt != -1L }) {
+                                            showConfirmDownloadAllDialog = true
+                                        } else {
+                                            SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                        }
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_download_all_songs), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_download_all_songs),
+                                            context = context
+                                        )
                                     }
                                 )
                         )
@@ -669,7 +751,10 @@ fun AlbumDetails(
                                         showConfirmDeleteDownloadDialog = true
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_remove_all_downloaded_songs), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_remove_all_downloaded_songs),
+                                            context = context
+                                        )
                                     }
                                 )
                         )
@@ -698,26 +783,29 @@ fun AlbumDetails(
 
                         HeaderIconButton(
                             icon = R.drawable.shuffle,
-                            enabled = songs.isNotEmpty(),
-                            color = if (songs.isNotEmpty()) colorPalette()
-.text else colorPalette()
-.textDisabled,
+                            enabled = songs.any { it.likedAt != -1L },
+                            color = if (songs.any { it.likedAt != -1L }) colorPalette().text else colorPalette().textDisabled,
                             onClick = {},
                             modifier = Modifier
                                 .padding(horizontal = 5.dp)
                                 .combinedClickable(
                                     onClick = {
-                                        if (songs.isNotEmpty()) {
+                                        if (songs.any { it.likedAt != -1L }) {
                                             binder?.stopRadio()
                                             binder?.player?.forcePlayFromBeginning(
-                                                songs
+                                                songs.filter { it.likedAt != -1L }
                                                     .shuffled()
                                                     .map(Song::asMediaItem)
                                             )
+                                        } else {
+                                            SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
                                         }
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_shuffle), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_shuffle),
+                                            context = context
+                                        )
                                     }
                                 )
                         )
@@ -725,21 +813,25 @@ fun AlbumDetails(
                         HeaderIconButton(
                             icon = R.drawable.radio,
                             enabled = true,
-                            color = colorPalette()
-.text,
+                            color = if (songs.any { it.likedAt != -1L }) colorPalette().text else colorPalette().textDisabled,
                             onClick = {},
                             modifier = Modifier
                                 .padding(horizontal = 5.dp)
                                 .combinedClickable(
                                     onClick = {
-                                        binder?.stopRadio()
-                                        binder?.player?.forcePlayFromBeginning(
-                                            songs.map(Song::asMediaItem)
-                                        )
-                                        binder?.setupRadio(NavigationEndpoint.Endpoint.Watch(videoId = songs.first().id))
+                                        if (songs.any { it.likedAt != -1L }) {
+                                            binder?.stopRadio()
+                                            binder?.player?.forcePlayFromBeginning(songs.filter { it.likedAt != -1L }.map(Song::asMediaItem))
+                                            binder?.setupRadio(NavigationEndpoint.Endpoint.Watch(videoId = songs.first { it.likedAt != -1L }.id))
+                                        } else {
+                                            SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                        }
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_start_radio), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_start_radio),
+                                            context = context
+                                        )
                                     }
                                 )
                         )
@@ -761,7 +853,10 @@ fun AlbumDetails(
                                             scrollToNowPlaying = true
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_find_the_song_that_is_playing), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_find_the_song_that_is_playing),
+                                            context = context
+                                        )
                                     }
                                 ),
                             icon = R.drawable.locate,
@@ -772,6 +867,26 @@ fun AlbumDetails(
                             onClick = {}
 
 
+                        )
+
+                        HeaderIconButton(
+                            modifier = Modifier
+                                .padding(horizontal = 5.dp)
+                                .combinedClickable(
+                                    onClick = {startSync = true},
+                                    onLongClick = {
+                                        SmartMessage(
+                                            context.resources.getString(R.string.update_album),
+                                            context = context
+                                        )
+                                    }
+                                ),
+                            icon = R.drawable.update,
+                            enabled = songs.isNotEmpty(),
+                            color = if (songs.isNotEmpty()) colorPalette()
+                                .text else colorPalette()
+                                .textDisabled,
+                            onClick = {}
                         )
 
 
@@ -812,10 +927,15 @@ fun AlbumDetails(
                                             },
                                             onPlayNext = {
                                                 if (listMediaItems.isEmpty()) {
-                                                    binder?.player?.addNext(
-                                                        songs.map(Song::asMediaItem),
-                                                        context
-                                                    )
+                                                    if (songs.any { it.likedAt != -1L }) {
+                                                        binder?.player?.addNext(
+                                                            songs.filter { it.likedAt != -1L }
+                                                                .map(Song::asMediaItem),
+                                                            context
+                                                        )
+                                                    } else {
+                                                        SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                    }
                                                 } else {
                                                     binder?.player?.addNext(listMediaItems, context)
                                                     listMediaItems.clear()
@@ -824,10 +944,14 @@ fun AlbumDetails(
                                             },
                                             onEnqueue = {
                                                 if (listMediaItems.isEmpty()) {
-                                                    binder?.player?.enqueue(
-                                                        songs.map(Song::asMediaItem),
-                                                        context
-                                                    )
+                                                    if (songs.any { it.likedAt != -1L }) {
+                                                        binder?.player?.enqueue(
+                                                            songs.filter { it.likedAt != -1L }
+                                                                .map(Song::asMediaItem),context
+                                                        )
+                                                    } else {
+                                                        SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                    }
                                                 } else {
                                                     binder?.player?.enqueue(listMediaItems, context)
                                                     listMediaItems.clear()
@@ -844,9 +968,9 @@ fun AlbumDetails(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 if (listMediaItems.isEmpty()) {
                                                     songs.forEachIndexed { index, song ->
-                                                        transaction {
-                                                            Database.insert(song.asMediaItem)
-                                                            Database.insert(
+                                                        Database.asyncTransaction {
+                                                            insert(song.asMediaItem)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -854,14 +978,18 @@ fun AlbumDetails(
                                                                 )
                                                             )
                                                         }
-                                                        //Log.d("mediaItemPos", "added position ${position + index}")
+
+                                                        if(isYouTubeSyncEnabled())
+                                                            CoroutineScope(Dispatchers.IO).launch {
+                                                                playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.id) }
+                                                            }
                                                     }
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
-                                                        transaction {
-                                                            Database.insert(song)
-                                                            Database.insert(
+                                                        Database.asyncTransaction {
+                                                            insert(song)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -869,11 +997,23 @@ fun AlbumDetails(
                                                                 )
                                                             )
                                                         }
-                                                        //Log.d("mediaItemPos", "add position $position")
+                                                        if(isYouTubeSyncEnabled())
+                                                            CoroutineScope(Dispatchers.IO).launch {
+                                                                playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.mediaId) }
+                                                            }
                                                     }
                                                     listMediaItems.clear()
                                                     selectItems = false
                                                 }
+                                            },
+                                            onAddToFavourites = {
+                                                songs.forEach { song ->
+
+                                                      val likedAt: Long? = song.likedAt
+                                                        if(likedAt == null) {
+                                                            mediaItemToggleLike(song.asMediaItem)
+                                                        }
+                                                  }
                                             },
                                             disableScrollingText = disableScrollingText
                                         )
@@ -900,26 +1040,44 @@ fun AlbumDetails(
                     items = songs,
                     key = { _, song -> song.id }
                 ) { index, song ->
+                    val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
+                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                    val isDownloaded =
+                        if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
 
                     SwipeablePlaylistItem(
                         mediaItem = song.asMediaItem,
-                        onSwipeToRight = {
+                        onPlayNext = {
                             binder?.player?.addNext(song.asMediaItem)
+                        },
+                        onDownload = {
+                            binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                            Database.asyncTransaction {
+                                resetContentLength( song.asMediaItem.mediaId )
+                            }
+
+                            if (!isLocal)
+                                manageDownload(
+                                    context = context,
+                                    mediaItem = song.asMediaItem,
+                                    downloadState = isDownloaded
+                                )
+                        },
+                        onEnqueue = {
+                            binder?.player?.enqueue(song.asMediaItem)
                         }
                     ) {
-                        val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
-                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                        val isDownloaded =
-                            if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             mediaItem = song.asMediaItem,
                             downloadState = downloadState,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                Database.asyncTransaction {
+                                    deleteFormat( song.asMediaItem.mediaId )
                                 }
+
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
@@ -941,7 +1099,8 @@ fun AlbumDetails(
                              */
                                 BasicText(
                                     text = "${index + 1}",
-                                    style = typography().s.semiBold.center.color(colorPalette()
+                                    style = typography().s.semiBold.center.color(
+                                        colorPalette()
 .textDisabled),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -950,8 +1109,8 @@ fun AlbumDetails(
                                         .align(Alignment.Center)
                                 )
 
-                                if (nowPlayingItem > -1)
-                                    NowPlayingShow(song.asMediaItem.mediaId)
+
+                                    NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                             },
                             modifier = Modifier
                                 .combinedClickable(
@@ -959,20 +1118,29 @@ fun AlbumDetails(
                                         menuState.display {
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
-                                        };
+                                        }
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     },
                                     onClick = {
                                         if (!selectItems) {
-                                            binder?.stopRadio()
-                                            binder?.player?.forcePlayAtIndex(
-                                                songs.map(Song::asMediaItem),
-                                                index
-                                            )
+                                            if (song.likedAt != -1L) {
+                                                binder?.stopRadio()
+                                                binder?.player?.forcePlayAtIndex(
+                                                    songs.filter { it.likedAt != -1L }.map(Song::asMediaItem),
+                                                    songs.filter { it.likedAt != -1L }.map(Song::asMediaItem).indexOf(song.asMediaItem)
+                                                )
+                                            } else {
+                                                CoroutineScope(Dispatchers.Main).launch {
+                                                    SmartMessage(context.resources.getString(R.string.disliked_this_song),type = PopupType.Error, context = context)
+                                                }
+                                            }
                                         } else checkedState.value = !checkedState.value
                                     }
                                 ),
@@ -997,7 +1165,9 @@ fun AlbumDetails(
                                 else checkedState.value = false
                             },
                             //mediaId = song.asMediaItem.mediaId
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }
@@ -1025,12 +1195,12 @@ fun AlbumDetails(
                             ({
                                 Result.success(
                                     Innertube.ItemsPage(
-                                        items = albumPage?.otherVersions,
+                                        items = albumPage.otherVersions,
                                         continuation = null
                                     )
                                 )
                             })
-                        },
+                        } ?: { Result.success(Innertube.ItemsPage(items = emptyList(), continuation = null)) },
                         itemContent = { album ->
                             AlbumItem(
                                 alternative = true,
@@ -1049,6 +1219,8 @@ fun AlbumDetails(
                             AlbumItemPlaceholder(thumbnailSizeDp = thumbnailSizeDp)
                         }
                     )
+
+                            /**********/
 
                     /**********/
                 }
@@ -1089,7 +1261,10 @@ fun AlbumDetails(
                                             translateEnabled = !translateEnabled
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_translation), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_translation),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -1151,7 +1326,8 @@ fun AlbumDetails(
                         if (attributionsIndex != -1) {
                             BasicText(
                                 text = stringResource(R.string.from_wikipedia_cca),
-                                style = typography().xxs.color(colorPalette()
+                                style = typography().xxs.color(
+                                    colorPalette()
 .textDisabled).align(
                                     TextAlign.Start
                                 ),
@@ -1194,11 +1370,15 @@ fun AlbumDetails(
                 MultiFloatingActionsContainer(
                     iconId = R.drawable.shuffle,
                     onClick = {
-                        if (songs.isNotEmpty()) {
+                        if (songs.any { it.likedAt != -1L }) {
                             binder?.stopRadio()
                             binder?.player?.forcePlayFromBeginning(
-                                songs.shuffled().map(Song::asMediaItem)
+                                songs.filter { it.likedAt != -1L }
+                                    .shuffled()
+                                    .map(Song::asMediaItem)
                             )
+                        } else {
+                            SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
                         }
                     },
                     onClickSettings = onSettingsClick,

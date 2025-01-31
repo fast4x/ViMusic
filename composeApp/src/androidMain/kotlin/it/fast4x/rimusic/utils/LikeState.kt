@@ -5,11 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable

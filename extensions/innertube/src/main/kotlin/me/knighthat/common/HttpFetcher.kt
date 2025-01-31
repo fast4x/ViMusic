@@ -19,6 +19,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLProtocol
 import io.ktor.serialization.kotlinx.json.json
 import it.fast4x.innertube.utils.ProxyPreferences
+import it.fast4x.innertube.utils.getProxy
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -89,10 +90,7 @@ internal object HttpFetcher {
         }
         ProxyPreferences.preference?.let {
             engine {
-                proxy = Proxy(
-                    it.proxyMode,
-                    InetSocketAddress( it.proxyHost, it.proxyPort )
-                )
+                proxy = getProxy(it)
             }
         }
         defaultRequest {

@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun UpdateYoutubeArtist(browseId: String) {
 
-    var artistPage by persist<Innertube.ArtistPage?>("artist/$browseId/artistPage")
+    var artistPage by persist<Innertube.ArtistInfoPage?>("artist/$browseId/artistPage")
     var artist by persist<Artist?>("artist/$browseId/artist")
     val tabIndex by rememberPreference(artistScreenTabIndexKey, defaultValue = 0)
 

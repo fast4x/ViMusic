@@ -19,9 +19,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.offline.DownloadService.sendAddDownload
+import androidx.media3.exoplayer.offline.DownloadService.sendRemoveDownload
 
 inline fun <reified T> Context.intent(): Intent =
-    Intent(this@Context, T::class.java)
+    Intent(this, T::class.java)
 
 inline fun <reified T : BroadcastReceiver> Context.broadCastPendingIntent(
     requestCode: Int = 0,
@@ -103,6 +104,16 @@ inline fun <reified T : DownloadService> Context.download(request: DownloadReque
         /* context         = */ this,
         /* clazz           = */ T::class.java,
         /* downloadRequest = */ request,
+        /* foreground      = */ false
+    )
+}
+
+@OptIn(UnstableApi::class)
+inline fun <reified T : DownloadService> Context.removeDownload(mediaId: String) = runCatching {
+    sendRemoveDownload(
+        /* context         = */ this,
+        /* clazz           = */ T::class.java,
+        /* id              = */ mediaId,
         /* foreground      = */ false
     )
 }

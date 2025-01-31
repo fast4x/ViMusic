@@ -31,8 +31,8 @@ import it.fast4x.rimusic.ui.items.PlaylistItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
 
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
@@ -94,7 +94,7 @@ fun HomeSearch(
                     modifier = Modifier
                         .clip(thumbnailShape())
                         .clickable(onClick = { onSearchType(SearchType.Online) })
-                        .animateItemPlacement(),
+                        .animateItem(),
                     disableScrollingText = disableScrollingText
                 )
             }
@@ -110,7 +110,7 @@ fun HomeSearch(
                     modifier = Modifier
                         .clip(thumbnailShape())
                         .clickable(onClick = { onSearchType(SearchType.Library) })
-                        .animateItemPlacement(),
+                        .animateItem(),
                     disableScrollingText = disableScrollingText
                 )
             }

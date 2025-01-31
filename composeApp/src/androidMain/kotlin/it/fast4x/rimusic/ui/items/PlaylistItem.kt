@@ -42,10 +42,10 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.conditional
-import it.fast4x.rimusic.utils.getTitleMonthlyPlaylist
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
@@ -53,9 +53,9 @@ import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 
 @Composable
@@ -125,6 +125,7 @@ fun PlaylistItem(
     }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
     PlaylistItem(
+        browseId = playlist.playlist.browseId,
         thumbnailContent = {
             if (playlistThumbnailUrl.value != "") {
                 AsyncImage(
@@ -247,9 +248,8 @@ fun PlaylistItem(
 
 @Composable
 fun PlaylistItem(
-    thumbnailContent: @Composable BoxScope.(
-        //modifier: Modifier
-            ) -> Unit,
+    browseId: String? = null,
+    thumbnailContent: @Composable BoxScope.() -> Unit,
     songCount: Int?,
     name: String?,
     channelName: String?,
@@ -313,8 +313,21 @@ fun PlaylistItem(
                         contentScale = ContentScale.Fit
                     )
                 }
-            }
 
+            }
+            if (browseId?.isNotEmpty() == true && name?.startsWith(
+                    PIPED_PREFIX) == false
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ytmusic),
+                    colorFilter = ColorFilter.tint(colorPalette().text),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(all = 5.dp),
+                    contentDescription = "Background Image",
+                    contentScale = ContentScale.Fit
+                )
+            }
 
             if (showSongsCount)
                 songCount?.let {
@@ -343,12 +356,7 @@ fun PlaylistItem(
                 if (name != null) {
                     BasicText(
                         //text = name.substringAfter(PINNED_PREFIX) ?: "",
-                        text = if (name.startsWith(PINNED_PREFIX,0,true))
-                            name.substringAfter(PINNED_PREFIX) else
-                            if (name.startsWith(MONTHLY_PREFIX,0,true))
-                                getTitleMonthlyPlaylist(name.substringAfter(MONTHLY_PREFIX)) else
-                            if (name.startsWith(PIPED_PREFIX,0,true))
-                            name.substringAfter(PIPED_PREFIX) else name,
+                        text = cleanPrefix(name),
                         style = typography().xs.semiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

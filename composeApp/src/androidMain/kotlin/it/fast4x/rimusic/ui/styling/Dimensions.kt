@@ -14,9 +14,8 @@ object Dimensions {
     val navigationRailWidthLandscape = 128.dp
     val navigationRailIconOffset = 6.dp
     val headerHeight = 140.dp
-    val headerHeight3 = 160.dp
     val halfheaderHeight = 60.dp
-    val mediumheaderHeight = 80.dp
+    val miniPlayerHeight = 64.dp
     val collapsedPlayer = 64.dp
     val navigationBarHeight = 64.dp
     val contentWidthRightBar = 0.88f
@@ -24,8 +23,8 @@ object Dimensions {
     val bottomSpacer = 100.dp
     val fadeSpacingTop = 30.dp
     val fadeSpacingBottom = 64.dp
-    val fadeSpacing = 30.dp
-    val itemHeight = 56.dp
+    val musicAnimationHeight = 20.dp
+
 
 
     object thumbnails {

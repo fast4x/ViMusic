@@ -2,17 +2,17 @@
 <resources>
     <string name="opensource_multilingual_application">O aplicație Android open-source și multilingvă pentru streaming de muzică de pe YouTube Music</string>
     <string name="your_library">Biblioteca ta.</string>
-    <string name="organized_in_one_place">Totul organizat într-un singur loc: muzicile tale preferate, descărcate, ascultate și toate listele tale de redare.</string>
+    <string name="organized_in_one_place">Toată muzica ta preferată, descărcată, ascultată și toate playlisturile tale, într-un singur loc.</string>
     <string name="beautiful_player">Un player elegant.</string>
-    <string name="listen_songs_sing_lyrics">Ascultă muzică, cântă cu versurile și traduce cuvintele cu ajutorul traducătorului integrat.</string>
+    <string name="listen_songs_sing_lyrics">Ascultă muzică, cântă cu versurile și traduce cuvintele cu traducătorul integrat.</string>
     <string name="many_effects">Numeroase efecte.</string>
-    <string name="visualizer_preview_timeline">Aplică efectele tale preferate: Vizualizator, previzualizare, cronologie, buton play...</string>
+    <string name="visualizer_preview_timeline">Vizualizator, previzualizare, cronologie, buton play, aplică efectele preferate..</string>
     <string name="modern">Modern.</string>
-    <string name="rimusic_is_multilingual_modern_powerful">RiMusic este multilingv, modern, puternic, atractiv, frumos si tradus în multe limbi datorită colaborării unor numeroși contributori.</string>
+    <string name="rimusic_is_multilingual_modern_powerful">RiMusic este multilingv, modern, puternic, atractiv, frumos și tradus în multe limbi datorită contribuției numeroșilor colaboratori.</string>
     <string name="listen_to_your_favourite_music">Ascultă muzica ta preferată</string>
-    <string name="download_rimusic_now">Descărcă RiMusic acum.</string>
-    <string name="repository">Cod sursă</string>
-    <string name="releases">Versiuni</string>
-    <string name="issue_tracker">Registrul problemelor</string>
+    <string name="download_rimusic_now">Descarcă RiMusic acum.</string>
+    <string name="repository">Depozit de cod</string>
+    <string name="releases">Lansări</string>
+    <string name="issue_tracker">Urmărirea problemelor</string>
     <string name="custom_version">Versiune personalizată</string>
 </resources>

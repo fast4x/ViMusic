@@ -14,24 +14,16 @@ import androidx.compose.ui.platform.LocalContext
 
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
 
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.LocalDownloader
+import it.fast4x.rimusic.LocalDownloadHelper
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.service.MyDownloadService
 import it.fast4x.rimusic.service.isLocal
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
-import me.knighthat.appContext
 
 @UnstableApi
 @Composable
@@ -82,16 +74,12 @@ fun manageDownload(
 
     if (mediaItem.isLocal) return
 
-    if (downloadState)
-        DownloadService.sendRemoveDownload(
-            context,
-            MyDownloadService::class.java,
-            mediaItem.mediaId,
-            false
-        )
+    if (downloadState) {
+        MyDownloadHelper.removeDownload(context = context, mediaItem = mediaItem)
+    }
     else {
         if (isNetworkAvailable(context)) {
-            MyDownloadHelper.scheduleDownload(context = context, mediaItem = mediaItem)
+            MyDownloadHelper.addDownload(context = context, mediaItem = mediaItem)
         }
     }
 
@@ -101,7 +89,7 @@ fun manageDownload(
 @UnstableApi
 @Composable
 fun getDownloadState(mediaId: String): Int {
-    val downloader = LocalDownloader.current
+    val downloader = LocalDownloadHelper.current
     if (!isNetworkAvailableComposable()) return 3
 
     return downloader.getDownload(mediaId).collectAsState(initial = null).value?.state

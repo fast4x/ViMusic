@@ -10,38 +10,27 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.request
-import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
-import io.ktor.http.HttpMethod
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
-import it.fast4x.invidious.models.AdaptiveFormat
 import it.fast4x.invidious.models.Instances
 import it.fast4x.invidious.models.InvidiousResponse
 import it.fast4x.invidious.utils.ProxyPreferences
+import it.fast4x.invidious.utils.getProxy
 import it.fast4x.invidious.utils.runCatchingCancellable
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.logging.HttpLoggingInterceptor
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.util.UUID
 
 
 operator fun Url.div(path: String) = URLBuilder(this).apply { path(path) }.build()
@@ -87,13 +76,7 @@ object Invidious {
 
             ProxyPreferences.preference?.let {
                 engine {
-                    proxy = Proxy(
-                        it.proxyMode,
-                        InetSocketAddress(
-                            it.proxyHost,
-                            it.proxyPort
-                        )
-                    )
+                    proxy = getProxy(it)
                 }
             }
 
@@ -149,11 +132,11 @@ object Invidious {
 
         suspend fun videos(videoId: String) = runCatchingCancellable {
             println("Invidious.api.videos request started")
-            val url = "${Instances.NADEKO.apiUrl}videos/${videoId}"
+            val url = "${Instances.YEWTU.apiUrl}videos/${videoId}"
             println("Invidious.api.videos url: $url")
             val response = client.get(url) {
                 contentType(ContentType.Application.Json)
-            }.body<InvidiousResponse>().adaptiveFormats
+            }.body<InvidiousResponse>()
             println("Invidious.api.videos request finished $response")
             return@runCatchingCancellable response
         }?.onFailure {

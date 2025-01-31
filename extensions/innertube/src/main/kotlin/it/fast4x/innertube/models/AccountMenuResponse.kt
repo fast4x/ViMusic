@@ -5,11 +5,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AccountMenuResponse(
-    val actions: List<Action>,
+    val actions: List<Action?>?,
 ) {
     @Serializable
     data class Action(
-        val openPopupAction: OpenPopupAction,
+        val openPopupAction: OpenPopupAction?,
     ) {
         @Serializable
         data class OpenPopupAction(
@@ -17,7 +17,7 @@ data class AccountMenuResponse(
         ) {
             @Serializable
             data class Popup(
-                val multiPageMenuRenderer: MultiPageMenuRenderer,
+                val multiPageMenuRenderer: MultiPageMenuRenderer?,
             ) {
                 @Serializable
                 data class MultiPageMenuRenderer(
@@ -25,20 +25,35 @@ data class AccountMenuResponse(
                 ) {
                     @Serializable
                     data class Header(
-                        val activeAccountHeaderRenderer: ActiveAccountHeaderRenderer,
+                        val activeAccountHeaderRenderer: ActiveAccountHeaderRenderer?,
                     ) {
                         @Serializable
                         data class ActiveAccountHeaderRenderer(
-                            val accountName: Runs,
+                            val accountName: Runs?,
                             val email: Runs?,
                             val channelHandle: Runs?,
+                            val accountPhoto: Thumbnails?
                         ) {
-                            fun toAccountInfo() = accountName.runs.first().text?.let {
-                                AccountInfo(
-                                    name = it,
-                                    email = email?.runs?.first()?.text,
-                                    channelHandle = channelHandle?.runs?.first()?.text
-                                )
+                            fun toAccountInfo() = AccountInfo(
+                                name = accountName?.runs?.first()?.text,
+                                email = email?.runs?.first()?.text,
+                                channelHandle = channelHandle?.runs?.first()?.text,
+                                thumbnailUrl = accountPhoto?.thumbnails?.firstOrNull()?.url?.substringBefore("=")
+                            )
+
+                            fun toAccountInfoList(): List<AccountInfo> {
+                                val accountInfo = mutableListOf<AccountInfo>()
+                                accountName?.runs?.forEachIndexed { index, run ->
+                                    accountInfo.add(
+                                        AccountInfo(
+                                            name = run.text,
+                                            email = email?.runs?.get(index)?.text,
+                                            channelHandle = channelHandle?.runs?.get(index)?.text,
+                                            thumbnailUrl = accountPhoto?.thumbnails?.get(index)?.url?.substringBefore("=")
+                                        )
+                                    )
+                                }
+                                return accountInfo
                             }
                         }
                     }

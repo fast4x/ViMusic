@@ -35,7 +35,6 @@ import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
@@ -50,16 +49,19 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
-import me.knighthat.colorPalette
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -178,8 +180,8 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                query {
-                                                    Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
                                                 }
                                                 manageDownload(
                                                     context = context,
@@ -216,8 +218,8 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                query {
-                                                    Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
                                                 }
                                                 manageDownload(
                                                     context = context,
@@ -284,8 +286,8 @@ fun ArtistLocalSongs(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
 
                                 manageDownload(
@@ -317,7 +319,8 @@ fun ArtistLocalSongs(
                                         )
                                     }
                                 ),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false
                         )
                     }
                 } ?: item(key = "loading") {

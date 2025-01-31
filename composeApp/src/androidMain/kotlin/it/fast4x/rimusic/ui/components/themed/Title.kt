@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @Composable
 fun Title(
@@ -33,15 +33,17 @@ fun Title(
     modifier: Modifier = Modifier,
     verticalPadding: Dp = 12.dp,
     @DrawableRes icon: Int? = R.drawable.arrow_forward,
+    enableClick: Boolean = true,
     onClick: (() -> Unit)? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+            //.windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .clickable(enabled = onClick != null) {
-                onClick?.invoke()
+                if (enableClick)
+                    onClick?.invoke()
             }
             .padding(horizontal = 12.dp, vertical = verticalPadding)
     ) {
@@ -57,7 +59,7 @@ fun Title(
 
         )
 
-        if (onClick != null) {
+        if (onClick != null && enableClick) {
             Icon(
                 painter = painterResource(icon ?: R.drawable.arrow_forward),
                 contentDescription = null,
@@ -73,6 +75,7 @@ fun Title2Actions(
     modifier: Modifier = Modifier,
     @DrawableRes icon1: Int? = R.drawable.arrow_forward,
     @DrawableRes icon2: Int? = R.drawable.arrow_forward,
+    enableClick: Boolean = true,
     onClick1: (() -> Unit)? = null,
     onClick2: (() -> Unit)? = null,
 ) {
@@ -82,7 +85,8 @@ fun Title2Actions(
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .clickable(enabled = onClick1 != null) {
-                onClick1?.invoke()
+                if (enableClick)
+                    onClick1?.invoke()
             }
             .padding(horizontal = 12.dp, vertical = 12.dp)
     ) {
@@ -97,7 +101,7 @@ fun Title2Actions(
             modifier = Modifier.weight(1f)
 
         )
-        if (onClick2 != null) {
+        if (onClick2 != null && enableClick) {
             Icon(
                 painter = painterResource(icon2 ?: R.drawable.arrow_forward),
                 contentDescription = null,
@@ -111,7 +115,7 @@ fun Title2Actions(
             )
         }
 
-        if (onClick1 != null) {
+        if (onClick1 != null && enableClick) {
             Icon(
                 painter = painterResource(icon1 ?: R.drawable.arrow_forward),
                 contentDescription = null,

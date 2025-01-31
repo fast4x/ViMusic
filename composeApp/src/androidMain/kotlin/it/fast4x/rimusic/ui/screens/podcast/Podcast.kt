@@ -66,6 +66,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.requests.podcastPage
@@ -78,11 +79,8 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Playlist
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -115,6 +113,7 @@ import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.rememberPreference
@@ -127,8 +126,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import timber.log.Timber
 
 
@@ -215,21 +215,19 @@ fun Podcast(
             value = podcastPage?.title ?: "",
             placeholder = "https://........",
             setValue = { text ->
-                query {
-                    transaction {
-                        val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
+                Database.asyncTransaction {
+                    val playlistId = insert(Playlist(name = text, browseId = browseId))
 
-                        podcastPage?.listEpisode
-                            ?.map(Innertube.Podcast.EpisodeItem::asMediaItem)
-                            ?.onEach(Database::insert)
-                            ?.mapIndexed { index, mediaItem ->
-                                SongPlaylistMap(
-                                    songId = mediaItem.mediaId,
-                                    playlistId = playlistId,
-                                    position = index
-                                )
-                            }?.let(Database::insertSongPlaylistMaps)
-                    }
+                    podcastPage?.listEpisode
+                        ?.map(Innertube.Podcast.EpisodeItem::asMediaItem)
+                        ?.onEach( ::insert )
+                        ?.mapIndexed { index, mediaItem ->
+                            SongPlaylistMap(
+                                songId = mediaItem.mediaId,
+                                playlistId = playlistId,
+                                position = index
+                            )
+                        }?.let( ::insertSongPlaylistMaps )
                 }
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)
             }
@@ -406,8 +404,8 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    query {
-                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -434,8 +432,8 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    query {
-                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -560,6 +558,10 @@ fun Podcast(
                                                             }.onFailure {
                                                                 Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
                                                             }
+                                                            if(isYouTubeSyncEnabled())
+                                                                CoroutineScope(Dispatchers.IO).launch {
+                                                                    playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                                }
                                                         }
                                                         CoroutineScope(Dispatchers.Main).launch {
                                                             SmartMessage(context.resources.getString(R.string.done), type = PopupType.Success, context = context)
@@ -707,22 +709,39 @@ fun Podcast(
                         } else true
                     } ?: emptyList())
                 { index, song ->
+                    val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
+                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                    val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
 
                     SwipeablePlaylistItem(
                         mediaItem = song.asMediaItem,
-                        onSwipeToRight = {
+                        onPlayNext = {
                             binder?.player?.addNext(song.asMediaItem)
+                        },
+                        onDownload = {
+                            binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( song.asMediaItem.mediaId )
+                            }
+
+                            if (!isLocal)
+                                manageDownload(
+                                    context = context,
+                                    mediaItem = song.asMediaItem,
+                                    downloadState = isDownloaded
+                                )
+                        },
+                        onEnqueue = {
+                            binder?.player?.enqueue(song.asMediaItem)
                         }
                     ) {
-                        val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
-                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                        val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = song.asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
 
                                 if (!isLocal)
@@ -741,7 +760,10 @@ fun Podcast(
                                         menuState.display {
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
@@ -758,7 +780,9 @@ fun Podcast(
                                             }
                                     }
                                 ),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.videoId) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }

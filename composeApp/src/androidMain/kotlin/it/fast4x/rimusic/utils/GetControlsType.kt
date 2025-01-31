@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.media3.common.util.UnstableApi
+import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PlayerControlsType
 import it.fast4x.rimusic.enums.PlayerPlayButtonType
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
@@ -43,7 +44,13 @@ fun GetControls(
         targetValue = if (isRotated) 360F else 0f,
         animationSpec = tween(durationMillis = 200), label = ""
     )
-    val isGradientBackgroundEnabled by rememberPreference(isGradientBackgroundEnabledKey, false)
+    val playerBackgroundColors by rememberPreference(
+        playerBackgroundColorsKey,
+        PlayerBackgroundColors.BlurredCoverColor
+    )
+
+    val isGradientBackgroundEnabled = playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient ||
+            playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient
 
     var playbackSpeed by rememberPreference(playbackSpeedKey, 1f)
     var playbackDuration by rememberPreference(playbackDurationKey, 0f)
@@ -88,7 +95,6 @@ fun GetControls(
                 likedAt = likedAt,
                 mediaId = mediaId,
                 playerPlayButtonType = playerPlayButtonType,
-                rotationAngle = rotationAngle,
                 isGradientBackgroundEnabled = isGradientBackgroundEnabled,
                 onShowSpeedPlayerDialog = { showSpeedPlayerDialog = true }
             )
@@ -100,7 +106,6 @@ fun GetControls(
                 playbackSpeed = playbackSpeed,
                 shouldBePlaying = shouldBePlaying,
                 playerPlayButtonType = playerPlayButtonType,
-                rotationAngle = rotationAngle,
                 isGradientBackgroundEnabled = isGradientBackgroundEnabled,
                 onShowSpeedPlayerDialog = { showSpeedPlayerDialog = true }
             )

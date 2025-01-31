@@ -1,8 +1,8 @@
 name: Automatically update contributors.json
 
 on:
-  schedule:
-    - cron: '0 0 * * 1' # Every Monday @ 00:00
+  #schedule:
+  #  - cron: '0 0 * * 1' # Every Monday @ 00:00
   # Allow manual trigger
   workflow_dispatch:
 
@@ -29,7 +29,8 @@ jobs:
         
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%m-%d-%Y')"
+        #run: echo "::set-output name=date::$(date +'%m-%d-%Y')"
+        run: echo "name=date::$(date +'%m-%d-%Y')" >> $GITHUB_OUTPUT
 
       - name: Push changes
         uses: stefanzweifel/git-auto-commit-action@v5.0.1

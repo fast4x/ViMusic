@@ -36,8 +36,8 @@ class Icon(
         bitmap.apply bitmap@{
             val radius = shortest * radiusR
             matrix.apply {
+                postTranslate(-this@bitmap.width/2f, -this@bitmap.height/2f)
                 postScale(radius / this@bitmap.width, radius / this@bitmap.width)
-                postTranslate(-radius / 2f, -radius / 2f)
             }
             drawHelper(canvas, "a", .5f, .5f) {
                 canvas.drawBitmap(this, matrix, paint)

@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import it.fast4x.rimusic.ui.styling.favoritesIcon
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable

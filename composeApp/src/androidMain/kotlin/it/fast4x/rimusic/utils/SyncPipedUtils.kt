@@ -10,14 +10,13 @@ import androidx.compose.ui.res.stringResource
 import it.fast4x.piped.Piped
 import it.fast4x.piped.models.Session
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.PIPED_PREFIX
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -41,9 +40,7 @@ fun syncSongsInPipedPlaylist(context: Context,coroutineScope: CoroutineScope, pi
             Timber.d("SyncPipedUtils syncSongsInPipedPlaylist playlistId $playlistId songs ${playlist.videos.size}")
 
             playlistId.let {
-                transaction {
-                    Database.clearPlaylist(it)
-                }
+                Database.asyncTransaction { clearPlaylist(it) }
             }
 
             playlist.videos.forEach {video ->
@@ -95,12 +92,12 @@ fun ImportPipedPlaylists(){
             }.await()?.map {
                 Timber.d("SyncPipedUtils ImportPipedPlaylists playlists ${it.size}")
                 //itemsPiped = it
-                transaction {
+                Database.asyncTransaction {
                     it.forEach {
-                        val playlistExist = Database.playlistExistByName("$PIPED_PREFIX${it.name}")
+                        val playlistExist = playlistExistByName("$PIPED_PREFIX${it.name}")
                         if (playlistExist == 0L) {
                             val playlistId =
-                                Database.insert(
+                                insert(
                                     Playlist(
                                         name = "$PIPED_PREFIX${it.name}",
                                         browseId = it.id.toString()
@@ -124,13 +121,11 @@ fun ImportPipedPlaylists(){
                                                 thumbnailUrl = video.thumbnailUrl.toString()
                                             )
                                         }
-                                        if (song != null) {
-                                            Database.insert(song)
-                                        }
+                                        if (song != null) insert(song)
                                     }
                                     playlist.videos.forEachIndexed { index, song ->
                                         if (!song.id.isNullOrBlank() || !song.id.isNullOrEmpty()) {
-                                            Database.insert(
+                                            insert(
                                                 SongPlaylistMap(
                                                     songId = song.id.toString(),
                                                     playlistId = playlistId,

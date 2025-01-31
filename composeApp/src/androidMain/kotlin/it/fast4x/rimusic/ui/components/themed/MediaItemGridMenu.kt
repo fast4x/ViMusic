@@ -51,9 +51,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
+import it.fast4x.rimusic.MODIFIED_PREFIX
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -61,21 +66,13 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Playlist
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.SongItem
-import it.fast4x.rimusic.MODIFIED_PREFIX
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.addNext
-import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
@@ -89,11 +86,14 @@ import it.fast4x.rimusic.utils.positionAndDurationState
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -156,6 +156,7 @@ fun BaseMediaItemGridMenu(
     onClosePlayer: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
+    onMatchingSong: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     //val context = LocalContext.current
@@ -171,17 +172,22 @@ fun BaseMediaItemGridMenu(
         onEnqueue = onEnqueue,
         onDownload = onDownload,
         onAddToPreferites = onAddToPreferites,
+        onMatchingSong =  onMatchingSong,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.asyncTransaction {
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
                     )
                 )
             }
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
         },
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
@@ -238,16 +244,22 @@ fun MiniMediaItemGridMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.asyncTransaction {
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
                     )
                 )
             }
+
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
+
             onDismiss()
         },
         onGoToPlaylist = {
@@ -281,6 +293,7 @@ fun MediaItemGridMenu (
     onRemoveFromQueue: (() -> Unit)? = null,
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
+    onMatchingSong: (() -> Unit)? = null,
     onAddToPlaylist: ((Playlist, Int) -> Unit)? = null,
     onGoToAlbum: ((String) -> Unit)? = null,
     onGoToArtist: ((String) -> Unit)? = null,
@@ -404,8 +417,8 @@ fun MediaItemGridMenu (
                     ?.toString(),
                 onDownloadClick = {
                     binder?.cache?.removeResource(mediaItem.mediaId)
-                    query {
-                        Database.resetFormatContentLength(mediaItem.mediaId)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Database.deleteFormat( mediaItem.mediaId )
                     }
                     if (!isLocal)
                         manageDownload(
@@ -646,10 +659,9 @@ fun MediaItemGridMenu (
             placeholder = stringResource(R.string.title),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateSongTitle(mediaItem.mediaId, it)
+                    Database.asyncTransaction {
+                        updateSongTitle(mediaItem.mediaId, it)
                     }
-                    //context.toast("Song Saved $it")
                 }
             },
             prefix = MODIFIED_PREFIX
@@ -941,6 +953,15 @@ fun MediaItemGridMenu (
                         colorIcon = colorPalette.text,
                         colorText = colorPalette.text,
                         onClick = onAddToPreferites
+                    )
+
+                if (onMatchingSong != null)
+                    GridMenuItem(
+                        icon = R.drawable.random,
+                        title = R.string.match_song_grid,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = onMatchingSong
                     )
 
                 onAddToPlaylist?.let { onAddToPlaylist ->

@@ -4,5 +4,6 @@ enum class LyricsFontSize {
     Light,
     Medium,
     Heavy,
-    Large;
+    Large,
+    Custom
 }

@@ -11,9 +11,8 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import it.fast4x.innertube.utils.ProxyPreferences
+import it.fast4x.innertube.utils.getProxy
 import okhttp3.OkHttpClient
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.time.Duration
 
 
@@ -87,10 +86,7 @@ private fun okHttpClient(): OkHttpClient {
     ProxyPreferences.preference?.let {
         return OkHttpClient.Builder()
             .proxy(
-                Proxy(
-                    it.proxyMode,
-                    InetSocketAddress(it.proxyHost, it.proxyPort)
-                )
+                getProxy(it)
             )
             .connectTimeout(Duration.ofSeconds(16))
             .readTimeout(Duration.ofSeconds(8))

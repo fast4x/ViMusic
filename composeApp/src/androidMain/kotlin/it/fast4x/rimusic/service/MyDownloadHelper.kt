@@ -1,33 +1,41 @@
 package it.fast4x.rimusic.service
 
-
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
-//import androidx.media3.datasource.HttpDataSource
-import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.offline.DownloadService.sendAddDownload
+import androidx.media3.exoplayer.offline.DownloadService.sendRemoveDownload
 import androidx.media3.exoplayer.scheduler.Requirements
+import coil.imageLoader
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
-import it.fast4x.rimusic.transaction
+import it.fast4x.rimusic.models.SongEntity
+import it.fast4x.rimusic.utils.DownloadSyncedLyrics
+import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.audioQualityFormatKey
+import it.fast4x.rimusic.utils.autoDownloadSongKey
+import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
+import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
 import it.fast4x.rimusic.utils.download
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.preferences
+import it.fast4x.rimusic.utils.removeDownload
+import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -41,17 +49,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
-import java.net.ConnectException
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.time.Duration
+import java.util.Timer
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.concurrent.schedule
 
 @UnstableApi
 object MyDownloadHelper {
@@ -63,10 +66,10 @@ object MyDownloadHelper {
     )
 
     // While the class is not a singleton (lifecycle), there should only be one download state at a time
-    private val mutableDownloadState = MutableStateFlow(false)
-    val downloadState = mutableDownloadState.asStateFlow()
-    private val downloadQueue =
-        Channel<DownloadManager>(onBufferOverflow = BufferOverflow.DROP_OLDEST)
+//    private val mutableDownloadState = MutableStateFlow(false)
+//    val downloadState = mutableDownloadState.asStateFlow()
+//    private val downloadQueue =
+//        Channel<DownloadManager>(onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
 
@@ -79,7 +82,6 @@ object MyDownloadHelper {
     private lateinit var downloadDirectory: File
     private lateinit var downloadManager: DownloadManager
     lateinit var audioQualityFormat: AudioQualityFormat
-    //private lateinit var connectivityManager: ConnectivityManager
 
 
     var downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
@@ -165,23 +167,21 @@ object MyDownloadHelper {
                 getDatabaseProvider(context),
                 getDownloadCache(context),
                 createDataSourceFactory(),
+                //Executor(Runnable::run)
                 executor
             ).apply {
-                maxParallelDownloads = 6
+                maxParallelDownloads = 3
                 minRetryCount = 2
                 requirements = Requirements(Requirements.NETWORK)
 
                 addListener(
                     object : DownloadManager.Listener {
-                        override fun onIdle(downloadManager: DownloadManager) =
-                            mutableDownloadState.update { false }
 
                         override fun onDownloadChanged(
                             downloadManager: DownloadManager,
                             download: Download,
                             finalException: Exception?
                         ) = run {
-                            downloadQueue.trySend(downloadManager).let { }
                             syncDownloads(download)
                         }
 
@@ -189,7 +189,6 @@ object MyDownloadHelper {
                             downloadManager: DownloadManager,
                             download: Download
                         ) = run {
-                            downloadQueue.trySend(downloadManager).let { }
                             syncDownloads(download)
                         }
                     }
@@ -208,7 +207,6 @@ object MyDownloadHelper {
                 set(download.request.id, download)
             }
         }
-        getDownloads()
     }
 
     @Synchronized
@@ -232,7 +230,7 @@ object MyDownloadHelper {
     }
 
 
-        fun scheduleDownload(context: Context, mediaItem: MediaItem) {
+        fun addDownload(context: Context, mediaItem: MediaItem) {
             if (mediaItem.isLocal) return
 
             val downloadRequest = DownloadRequest
@@ -242,14 +240,19 @@ object MyDownloadHelper {
                         ?: Uri.parse("https://music.youtube.com/watch?v=${mediaItem.mediaId}")
                 )
                 .setCustomCacheKey(mediaItem.mediaId)
-                //.setData(mediaItem.mediaId.encodeToByteArray())
                 .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
                 .build()
 
-            transaction {
+            Database.asyncTransaction {
                 runCatching {
-                    Database.insert(mediaItem)
-                }.also { if (it.isFailure) return@transaction }
+                    insert(mediaItem)
+                }.also { if (it.isFailure) return@asyncTransaction }
+            }
+            val imageUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(1200)
+
+//            sendAddDownload(
+//                context,MyDownloadService::class.java,downloadRequest,false
+//            )
 
                 coroutineScope.launch {
                     context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {
@@ -258,9 +261,62 @@ object MyDownloadHelper {
                         Timber.e(it.stackTraceToString())
                         println("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
                     }
+                    DownloadSyncedLyrics(it = SongEntity(mediaItem.asSong), coroutineScope = coroutineScope)
+                    context.imageLoader.execute(
+                        ImageRequest.Builder(context)
+                            .networkCachePolicy(CachePolicy.ENABLED)
+                            .data(imageUrl)
+                            .size(1200)
+                            .bitmapConfig(Bitmap.Config.ARGB_8888)
+                            .allowHardware(false)
+                            .diskCacheKey(imageUrl.toString())
+                            .build()
+                    )
                 }
+
+        }
+
+    fun removeDownload(context: Context, mediaItem: MediaItem) {
+        if (mediaItem.isLocal) return
+
+        //sendRemoveDownload(context,MyDownloadService::class.java,mediaItem.mediaId,false)
+        coroutineScope.launch {
+            context.removeDownload<MyDownloadService>(mediaItem.mediaId).exceptionOrNull()?.let {
+                if (it is CancellationException) throw it
+
+                Timber.e(it.stackTraceToString())
+                println("MyDownloadHelper removeDownload exception ${it.stackTraceToString()}")
             }
         }
+    }
+
+    fun resumeDownloads(context: Context){
+        DownloadService.sendResumeDownloads(
+            context,
+            MyDownloadService::class.java,
+            false)
+    }
+
+    fun autoDownload(context: Context, mediaItem: MediaItem){
+        if (context.preferences.getBoolean(autoDownloadSongKey, false)) {
+            if (downloads.value[mediaItem.mediaId]?.state != Download.STATE_COMPLETED)
+                addDownload(context, mediaItem)
+        }
+    }
+
+    fun autoDownloadWhenLiked(context: Context, mediaItem: MediaItem){
+        if (context.preferences.getBoolean(autoDownloadSongWhenLikedKey, false)) {
+                autoDownload(context, mediaItem)
+        }
+    }
+
+    fun autoDownloadWhenAlbumBookmarked(context: Context, mediaItems: List<MediaItem>){
+        if (context.preferences.getBoolean(autoDownloadSongWhenAlbumBookmarkedKey, false)) {
+            mediaItems.forEach { mediaItem ->
+                autoDownload(context, mediaItem)
+            }
+        }
+    }
 
 
 }

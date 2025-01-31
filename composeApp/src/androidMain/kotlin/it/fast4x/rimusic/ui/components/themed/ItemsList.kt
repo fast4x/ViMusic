@@ -24,7 +24,7 @@ import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.secondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import me.knighthat.typography
+import it.fast4x.rimusic.typography
 
 @ExperimentalAnimationApi
 @Composable

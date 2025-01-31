@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.typography
+import it.fast4x.rimusic.typography
 
 @Composable
 fun SliderControl(

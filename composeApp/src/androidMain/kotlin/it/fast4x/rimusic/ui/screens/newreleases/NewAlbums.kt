@@ -39,7 +39,7 @@ import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.navigationBarPositionKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showSearchTabKey
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @ExperimentalTextApi
 @UnstableApi

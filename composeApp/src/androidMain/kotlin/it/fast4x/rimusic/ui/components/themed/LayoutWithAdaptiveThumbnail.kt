@@ -28,8 +28,8 @@ import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.playerThumbnailSizeKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnail
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
 
 
 @Composable

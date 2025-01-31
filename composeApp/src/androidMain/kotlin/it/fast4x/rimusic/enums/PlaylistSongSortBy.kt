@@ -6,8 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import it.fast4x.rimusic.R
-import me.knighthat.enums.Drawable
-import me.knighthat.enums.MenuTitle
 
 enum class PlaylistSongSortBy(
     @StringRes val textId: Int,
@@ -25,6 +23,8 @@ enum class PlaylistSongSortBy(
     DatePlayed( R.string.sort_date_played, R.drawable.up_right_arrow ),
 
     PlayTime( R.string.sort_listening_time, R.drawable.trending ),
+
+    RelativePlayTime(R.string.sort_listening_time, R.drawable.trending), // TODO different icon than PlayTime
 
     Position( R.string.sort_position, R.drawable.position ),
 

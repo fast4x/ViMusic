@@ -23,6 +23,8 @@
     <uses-permission android:name = "android.permission.RECORD_AUDIO"/>
     <uses-permission android:name = "android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name = "android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
 
     <uses-feature    android:name="android.software.leanback" android:required="false" />
     <uses-feature    android:name="android.hardware.touchscreen" android:required="false" />
@@ -50,6 +52,8 @@
         android:theme="@style/Theme.RiMusic"
         android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="false"
         tools:targetApi="tiramisu">
 
 
@@ -57,7 +61,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.App.Starting"
+            android:theme="@style/Theme.RiMusic"
             android:windowSoftInputMode="adjustResize"
             android:supportsPictureInPicture="true"
             android:configChanges=
@@ -136,89 +140,6 @@
             </intent-filter>
             <!-- NEW PLAYER SERVICE -->
 
-            <!--
-            <intent-filter>
-                <action android:name="android.intent.action.MUSIC_PLAYER" />
-                <category android:name="android.intent.category.CATEGORY_APP_MUSIC" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="https"/>
-                <data android:host="music.youtube.com"/>
-                <data android:pathPrefix="/playlist"/>
-
-                <data android:scheme="https"/>
-                <data android:host="www.youtube.com"/>
-                <data android:pathPrefix="/playlist"/>
-
-                <data android:scheme="https"/>
-                <data android:host="m.youtube.com"/>
-                <data android:pathPrefix="/playlist"/>
-
-                <data android:scheme="https"/>
-                <data android:host="music.youtube.com"/>
-                <data android:pathPrefix="/watch"/>
-
-                <data android:scheme="https"/>
-                <data android:host="www.youtube.com"/>
-                <data android:pathPrefix="/watch"/>
-
-                <data android:scheme="https"/>
-                <data android:host="m.youtube.com"/>
-                <data android:pathPrefix="/watch"/>
-
-                <data android:scheme="https"/>
-                <data android:host="youtu.be"/>
-                <data android:pathPrefix="/"/>
-
-                <data android:scheme="https"/>
-                <data android:host="music.youtube.com"/>
-                <data android:pathPrefix="/channel"/>
-
-                <data android:scheme="https"/>
-                <data android:host="www.youtube.com"/>
-                <data android:pathPrefix="/channel"/>
-
-                <data android:scheme="https"/>
-                <data android:host="m.youtube.com"/>
-                <data android:pathPrefix="/c"/>
-
-
-                <data android:pathPrefix="/v/" />
-                <data android:pathPrefix="/embed/" />
-                <data android:pathPrefix="/watch" />
-                <data android:pathPrefix="/shorts/" />
-                <data android:pathPrefix="/live/" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-
-            -->
-
             <meta-data android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
@@ -262,28 +183,6 @@
             </intent-filter>
         </receiver>
         <!-- NEW PLAYER SERVICE -->
-
-        <!--
-        <service
-            android:name=".service.PlayerService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback"
-            android:enabled="true"
-            android:stopWithTask="false">
-
-        </service>
-
-
-        <service android:name=".service.PlayerMediaBrowserService"
-            android:exported="true"
-            android:enabled="false"
-            tools:ignore="ExportedService">
-            <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
-            </intent-filter>
-        </service>
-
-        -->
 
         <service android:name=".service.MyDownloadService"
             android:exported="false"

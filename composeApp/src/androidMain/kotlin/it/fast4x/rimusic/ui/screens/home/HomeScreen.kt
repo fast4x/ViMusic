@@ -36,13 +36,12 @@ import it.fast4x.rimusic.utils.homeScreenTabIndexKey
 import it.fast4x.rimusic.utils.indexNavigationTabKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
-import it.fast4x.rimusic.utils.showSearchTabKey
-import it.fast4x.rimusic.utils.showStatsInNavbarKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.knighthat.Skeleton
+import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
 import kotlin.system.exitProcess
 
 
@@ -75,24 +74,20 @@ fun HomeScreen(
 
     PersistMapCleanup("home/")
 
-
-
             val openTabFromShortcut1 by remember{ mutableIntStateOf(openTabFromShortcut) }
 
-            var (tabIndex, onTabChanged) =
-                when (openTabFromShortcut1) {
+            var initialtabIndex =
+                    when (openTabFromShortcut1) {
                     -1 -> when (preferences.getEnum(indexNavigationTabKey, HomeScreenTabs.Default)) {
-                            HomeScreenTabs.Default -> rememberPreference(homeScreenTabIndexKey,
-                            HomeScreenTabs.QuickPics.index)
-                          else -> remember {
-                                mutableIntStateOf(preferences.getEnum(indexNavigationTabKey, HomeScreenTabs.QuickPics).index)
-                          }
-                        }
-                    else -> remember { mutableIntStateOf(openTabFromShortcut1) }
+                        HomeScreenTabs.Default -> HomeScreenTabs.QuickPics.index
+                        else -> preferences.getEnum(indexNavigationTabKey, HomeScreenTabs.QuickPics).index
+                    }
+                    else -> openTabFromShortcut1
                 }
 
-            if (tabIndex == -2) navController.navigate(NavRoutes.search.name)
+            var (tabIndex, onTabChanged) = rememberPreference(homeScreenTabIndexKey, initialtabIndex)
 
+            if (tabIndex == -2) navController.navigate(NavRoutes.search.name)
 
             if (!enableQuickPicksPage && tabIndex==0) tabIndex = 1
 
@@ -102,8 +97,10 @@ fun HomeScreen(
                 onTabChanged,
                 miniPlayer,
                 navBarContent = { Item ->
-                    if (enableQuickPicksPage)
-                        Item(0, stringResource(R.string.quick_picks), R.drawable.sparkles)
+                    if (enableQuickPicksPage || isYouTubeLoggedIn())
+                        Item(0, if (!isYouTubeLoggedIn())
+                            stringResource(R.string.quick_picks) else stringResource(R.string.home),
+                            if (!isYouTubeLoggedIn()) R.drawable.sparkles else R.drawable.ytmusic)
                     Item(1, stringResource(R.string.songs), R.drawable.musical_notes)
                     Item(2, stringResource(R.string.artists), R.drawable.artists)
                     Item(3, stringResource(R.string.albums), R.drawable.album)
@@ -112,7 +109,7 @@ fun HomeScreen(
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
                     when (currentTabIndex) {
-                        0 -> QuickPicks(
+                        0 -> HomeQuickPicks(
                             onAlbumClick = {
                                 navController.navigate(route = "${NavRoutes.album.name}/$it")
                             },
@@ -133,10 +130,9 @@ fun HomeScreen(
                                 navController.navigate(NavRoutes.settings.name)
                             },
                             navController = navController
-
                         )
 
-                        1 -> HomeSongs(
+                        1 -> HomeSongsModern(
                             navController = navController,
                             onSearchClick = {
                                 //searchRoute("")
@@ -231,8 +227,7 @@ fun HomeScreen(
 
         if( confirmCount == 0 ) {
             SmartMessage(
-                // TODO: add this string to xml
-                "Press once again to exit",
+                context.resources.getString(R.string.press_once_again_to_exit),
                 context = context
             )
             confirmCount++

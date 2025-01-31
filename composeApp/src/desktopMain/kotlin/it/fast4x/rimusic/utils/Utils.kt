@@ -10,8 +10,7 @@ import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.ProxyPreferences
 import database.entities.SongEntity
-import java.net.InetSocketAddress
-import java.net.Proxy
+import it.fast4x.innertube.utils.getProxy
 
 fun String.resize(
     width: Int? = null,
@@ -52,9 +51,8 @@ fun getHttpClient() = HttpClient() {
     }
     engine {
         ProxyPreferences.preference?.let{
-            proxy = Proxy(it.proxyMode, InetSocketAddress(it.proxyHost, it.proxyPort))
+            proxy = getProxy(it)
         }
-
     }
 }
 
@@ -94,7 +92,7 @@ val Innertube.SongItem.asSong: Song
     get() = Song (
         id = key,
         title = info?.name ?: "",
-        artistsText = authors?.joinToString("") { it.name ?: "" },
+        artistsText = authors?.joinToString(", ") { it.name ?: "" },
         durationText = durationText,
         thumbnailUrl = thumbnail?.url
     )
@@ -104,7 +102,7 @@ val Innertube.SongItem.asSongEntity: SongEntity
         song = Song (
             id = key,
             title = info?.name ?: "",
-            artistsText = authors?.joinToString("") { it.name ?: "" },
+            artistsText = authors?.joinToString(", ") { it.name ?: "" },
             durationText = durationText,
             thumbnailUrl = thumbnail?.url
             ),

@@ -1,13 +1,10 @@
 package it.fast4x.rimusic.utils
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import androidx.core.graphics.applyCanvas
 import androidx.media3.common.util.BitmapLoader
 import androidx.media3.common.util.UnstableApi
 import coil.imageLoader
@@ -18,7 +15,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.future
-import me.knighthat.appContext
 import java.util.concurrent.ExecutionException
 
 @UnstableApi

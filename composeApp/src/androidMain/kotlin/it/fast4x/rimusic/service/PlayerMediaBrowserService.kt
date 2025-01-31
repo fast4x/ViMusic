@@ -23,15 +23,16 @@ import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.searchPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongWithContentLength
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.MaxTopPlaylistItemsKey
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
@@ -156,8 +157,9 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
                     )
 
                     MediaId.songs -> Database
-                        .songsByPlayTimeDesc()
+                        .sortAllSongsByPlayTime( 0 )
                         .first()
+                        .reversed()
                         .take(500)
                         .also { lastSongs = it.map { it.song } }
                         .map { it.song.asBrowserMediaItem }
@@ -465,10 +467,12 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
 
                     MediaId.downloaded -> {
                         val downloads = MyDownloadHelper.downloads.value
-                        Database.listAllSongs()
-                             .filter {
-                                    downloads[it.id]?.state == Download.STATE_COMPLETED
-                             }
+                        Database.listAllSongs( 1 )
+                                .first()
+                                .map( SongEntity::song )
+                                .filter {
+                                       downloads[it.id]?.state == Download.STATE_COMPLETED
+                                }
                     }
 
                     MediaId.top -> {

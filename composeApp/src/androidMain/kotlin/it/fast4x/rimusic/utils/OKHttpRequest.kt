@@ -6,14 +6,13 @@ package it.fast4x.rimusic.utils
 
 
 import it.fast4x.innertube.utils.ProxyPreferences
+import it.fast4x.innertube.utils.getProxy
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.time.Duration
 
 class OkHttpRequest(client: OkHttpClient) {
@@ -28,9 +27,7 @@ class OkHttpRequest(client: OkHttpClient) {
         ProxyPreferences.preference?.let{
             return OkHttpClient.Builder()
                 .proxy(
-                    Proxy(it.proxyMode,
-                        InetSocketAddress(it.proxyHost,it.proxyPort)
-                    )
+                    getProxy(it)
                 )
                 .connectTimeout(Duration.ofSeconds(16))
                 .readTimeout(Duration.ofSeconds(8))

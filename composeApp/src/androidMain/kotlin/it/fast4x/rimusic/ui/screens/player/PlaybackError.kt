@@ -44,7 +44,7 @@ import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.medium
-import me.knighthat.typography
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import java.net.UnknownHostException
 import java.nio.channels.UnresolvedAddressException

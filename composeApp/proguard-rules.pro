@@ -1,3 +1,7 @@
+#-dontshrink
+-dontobfuscate
+#-dontoptimize
+
 -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
 -if @kotlinx.serialization.Serializable class **
@@ -20,15 +24,14 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-
--keepattributes RuntimeVisibleAnnotations,AnnotationDefault
-
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Service
 
+-keepattributes RuntimeVisibleAnnotations,AnnotationDefault
 -keepattributes SourceFile,LineNumberTable
-# rename the source files to something meaningless, but it must be retained
 -renamesourcefileattribute SourceFile
+
+
 
 -dontwarn org.bouncycastle.jsse.BCSSLParameters
 -dontwarn org.bouncycastle.jsse.BCSSLSocket
@@ -81,3 +84,10 @@
 -keep,allowobfuscation,allowoptimization @com.google.gson.annotations.JsonAdapter class *
 
 ##---------------End: proguard configuration for Gson  ----------
+
+## Rules for NewPipeExtractor
+-keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-dontwarn org.mozilla.javascript.JavaToJSONConverters
+-dontwarn org.mozilla.javascript.tools.**

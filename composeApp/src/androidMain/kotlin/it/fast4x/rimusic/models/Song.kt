@@ -3,6 +3,8 @@ package it.fast4x.rimusic.models
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.setLikeState
 import kotlinx.serialization.Serializable
 
@@ -36,5 +38,12 @@ data class Song(
             //likedAt = if (likedAt == null) System.currentTimeMillis() else null
             likedAt = setLikeState(likedAt)
         )
+    }
+
+    fun cleanTitle() = cleanPrefix( this.title )
+
+    fun relativePlayTime(): Double {
+        val totalPlayTimeMs = durationTextToMillis(this.durationText ?: "")
+        return if(totalPlayTimeMs > 0) this.totalPlayTimeMs.toDouble() / totalPlayTimeMs.toDouble() else 0.0
     }
 }

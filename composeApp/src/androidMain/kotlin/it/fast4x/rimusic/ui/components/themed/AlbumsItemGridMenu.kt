@@ -35,25 +35,24 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.AlbumItem
-import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.playlistSortByKey
 import it.fast4x.rimusic.utils.playlistSortOrderKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -74,6 +73,7 @@ fun AlbumsItemGridMenu(
     onPlayNext: (() -> Unit)? = null,
     onEnqueue: (() -> Unit)? = null,
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
+    onAddToFavourites: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
@@ -130,8 +130,8 @@ fun AlbumsItemGridMenu(
                         placeholder = stringResource(R.string.enter_the_playlist_name),
                         setValue = { text ->
                             onDismiss()
-                            transaction {
-                                val playlistId = Database.insert(Playlist(name = text))
+                            Database.asyncTransaction {
+                                val playlistId = insert(Playlist(name = text))
                                 onAddToPlaylist(
                                     PlaylistPreview(
                                         Playlist(
@@ -370,6 +370,18 @@ fun AlbumsItemGridMenu(
                         )
                     }
 
+                    onAddToFavourites?.let {
+                        GridMenuItem(
+                            icon = R.drawable.heart,
+                            title = R.string.add_to_favorites,
+                            colorIcon = color,
+                            colorText = color,
+                            onClick = {
+                                onDismiss()
+                                onAddToFavourites()
+                            }
+                        )
+                    }
                 }
             }
         }

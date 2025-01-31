@@ -12,6 +12,7 @@ import io.ktor.client.request.parameter
 import io.ktor.serialization.kotlinx.json.json
 import it.fast4x.lrclib.models.Track
 import it.fast4x.lrclib.utils.ProxyPreferences
+import it.fast4x.lrclib.utils.getProxy
 import it.fast4x.lrclib.utils.runCatchingCancellable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -46,13 +47,7 @@ object LrcLib {
 
             ProxyPreferences.preference?.let {
                 engine {
-                    proxy = Proxy(
-                        it.proxyMode,
-                        InetSocketAddress(
-                            it.proxyHost,
-                            it.proxyPort
-                        )
-                    )
+                    proxy = getProxy(it)
                 }
             }
 

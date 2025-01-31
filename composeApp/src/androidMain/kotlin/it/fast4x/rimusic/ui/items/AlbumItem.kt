@@ -24,9 +24,9 @@ import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 
 @Composable
 fun AlbumItem(
@@ -68,7 +68,7 @@ fun AlbumItem(
     AlbumItem(
         thumbnailUrl = album.thumbnail?.url,
         title = album.info?.name,
-        authors = album.authors?.joinToString("") { it.name ?: "" },
+        authors = album.authors?.joinToString(", ") { it.name ?: "" },
         year = album.year,
         yearCentered = yearCentered,
         thumbnailSizePx = thumbnailSizePx,

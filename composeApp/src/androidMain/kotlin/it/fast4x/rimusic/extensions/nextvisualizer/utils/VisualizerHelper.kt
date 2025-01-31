@@ -62,17 +62,17 @@ class VisualizerHelper(sessionId: Int) {
     /**
      * Log WfmAnalog and Fft values every 1s
      */
-    fun startDebug() {
-        handler = Handler()
-        runnable = object : Runnable {
-            override fun run() {
-                Timber.tag("WfmAnalog").d(getWave().contentToString())
-                Timber.tag("Fft").d(getFftMagnitude().contentToString())
-                handler.postDelayed(this, 1000)
-            }
-        }
-        handler.post(runnable)
-    }
+//    fun startDebug() {
+//        handler = Handler()
+//        runnable = object : Runnable {
+//            override fun run() {
+//                Timber.tag("WfmAnalog").d(getWave().contentToString())
+//                Timber.tag("Fft").d(getFftMagnitude().contentToString())
+//                handler.postDelayed(this, 1000)
+//            }
+//        }
+//        handler.post(runnable)
+//    }
 
     /**
      * Stop logging

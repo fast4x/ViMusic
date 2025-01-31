@@ -1,0 +1,30 @@
+name: Update contributors in README
+on:
+  schedule:
+    - cron:  '0 0 * * 5'
+  # Allow manual trigger
+  workflow_dispatch:
+# push:
+#   branches:
+#     - master
+
+jobs:
+  add-contributors:
+    runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+    steps:
+    - uses: actions/checkout@v2
+    - uses: BobAnkh/add-contributors@master
+      with:
+        CONTRIBUTOR: '### 🤝 **Developer / Designer that contribute:**'
+        COLUMN_PER_ROW: '6'
+        ACCESS_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        IMG_WIDTH: '60'
+        FONT_SIZE: '14'
+        PATH: '/README.md'
+        COMMIT_MESSAGE: 'Update contributors README'
+        AVATAR_SHAPE: 'round'
+        #PULL_REQUEST: 'Update collaborators'

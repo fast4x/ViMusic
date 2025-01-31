@@ -30,6 +30,7 @@ import it.fast4x.piped.models.PlaylistPreview
 import it.fast4x.piped.models.Session
 import it.fast4x.piped.models.authenticatedWith
 import it.fast4x.piped.utils.ProxyPreferences
+import it.fast4x.piped.utils.getProxy
 import it.fast4x.piped.utils.runCatchingCancellable
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
@@ -90,13 +91,7 @@ object Piped {
 
             ProxyPreferences.preference?.let {
                 engine {
-                    proxy = Proxy(
-                        it.proxyMode,
-                        InetSocketAddress(
-                            it.proxyHost,
-                            it.proxyPort
-                        )
-                    )
+                    proxy = getProxy(it)
                 }
             }
 

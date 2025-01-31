@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.animation.doOnEnd
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.utils.playbackVolumeKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -121,8 +122,10 @@ fun startFadeAnimator(
         callback?.run()
         return
     }
-    val startValue = if (fadeIn) 0f else 1.0f
-    val endValue = if (fadeIn) 1.0f else 0f
+    // Using global volume as max/min value
+    // so fading wouldn't make the audio louder
+    val startValue = if (fadeIn) 0f else player.getGlobalVolume()
+    val endValue = if (fadeIn) player.getGlobalVolume() else 0f
     val animator = ValueAnimator.ofFloat(startValue, endValue)
     animator.duration = fadeDuration
     if (fadeIn) player.volume = startValue
@@ -131,6 +134,7 @@ fun startFadeAnimator(
     }
     animator.doOnEnd {
         callback?.run()
+        player.restoreGlobalVolume()
     }
     animator.start()
 }

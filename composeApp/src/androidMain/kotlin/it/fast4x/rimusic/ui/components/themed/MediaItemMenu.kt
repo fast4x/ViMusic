@@ -59,10 +59,16 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
+import it.fast4x.rimusic.MODIFIED_PREFIX
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -74,24 +80,15 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.FolderItem
 import it.fast4x.rimusic.ui.items.SongItem
-import it.fast4x.rimusic.MODIFIED_PREFIX
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.addToPipedPlaylist
 import it.fast4x.rimusic.utils.asMediaItem
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
@@ -111,11 +108,16 @@ import it.fast4x.rimusic.utils.removeFromPipedPlaylist
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.service.MyDownloadHelper
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import timber.log.Timber
 import java.time.LocalTime.now
 import java.time.format.DateTimeFormatter
@@ -134,28 +136,6 @@ fun InHistoryMediaItemMenu(
     modifier: Modifier = Modifier,
     disableScrollingText: Boolean
 ) {
-    //val binder = LocalPlayerServiceBinder.current
-
-    /*
-    var isHiding by remember {
-        mutableStateOf(false)
-    }
-
-    if (isHiding) {
-        ConfirmationDialog(
-            text = stringResource(R.string.update_song),
-            onDismiss = { isHiding = false },
-            onConfirm = {
-                onDismiss()
-                query {
-                    // Not sure we can to this here
-                    binder?.cache?.removeResource(song.id)
-                    Database.incrementTotalPlayTimeMs(song.id, -song.totalPlayTimeMs)
-                }
-            }
-        )
-    }
-     */
 
     NonQueuedMediaItemMenu(
         navController = navController,
@@ -164,9 +144,10 @@ fun InHistoryMediaItemMenu(
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
         onAddToPreferites = {
-            transaction {
-                Database.like(song.id, System.currentTimeMillis())
+            Database.asyncTransaction {
+                like(song.id, System.currentTimeMillis())
             }
+            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
         },
         modifier = modifier,
         disableScrollingText = disableScrollingText
@@ -184,6 +165,7 @@ fun InPlaylistMediaItemMenu(
     playlistId: Long,
     positionInPlaylist: Int,
     song: Song,
+    onMatchingSong: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     disableScrollingText: Boolean
 ) {
@@ -197,10 +179,16 @@ fun InPlaylistMediaItemMenu(
         mediaItem = song.asMediaItem,
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
-            transaction {
-                Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                Database.delete(SongPlaylistMap(song.id, playlistId, Int.MAX_VALUE))
+            Database.asyncTransaction {
+                deleteSongFromPlaylist(song.id, playlistId)
             }
+
+            if(isYouTubeSyncEnabled() && playlist?.playlist?.browseId != null && !playlist.playlist.name.startsWith(PIPED_PREFIX))
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.playlist.browseId.let { YtMusic.removeFromPlaylist(
+                        it, song.id
+                    ) }
+                }
 
             if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.playlist.browseId}")
@@ -208,16 +196,19 @@ fun InPlaylistMediaItemMenu(
                     context = context,
                     coroutineScope = coroutineScope,
                     pipedSession = pipedSession.toApiSession(),
-                    id = UUID.fromString(playlist?.playlist?.browseId),
+                    id = UUID.fromString(playlist.playlist.browseId),
                     positionInPlaylist
                 )
             }
         },
         onAddToPreferites = {
-            transaction {
-                Database.like(song.id, System.currentTimeMillis())
+            Database.asyncTransaction {
+                like(song.id, System.currentTimeMillis())
             }
+            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
         },
+        onMatchingSong = { if (onMatchingSong != null) {onMatchingSong()}
+            onDismiss() },
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -235,6 +226,7 @@ fun NonQueuedMediaItemMenuLibrary(
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
+    onMatchingSong: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
@@ -250,11 +242,11 @@ fun NonQueuedMediaItemMenuLibrary(
             onDismiss = { isHiding = false },
             onConfirm = {
                 onDismiss()
-                query {
-                    if (binder != null) {
-                            binder.cache.removeResource(mediaItem.mediaId)
-                            binder.downloadCache.removeResource(mediaItem.mediaId)
-                            Database.resetTotalPlayTimeMs(mediaItem.mediaId)
+                if (binder != null) {
+                    binder.cache.removeResource(mediaItem.mediaId)
+                    binder.downloadCache.removeResource(mediaItem.mediaId)
+                    Database.asyncTransaction {
+                        resetTotalPlayTimeMs(mediaItem.mediaId)
                     }
                 }
             }
@@ -289,12 +281,13 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             modifier = modifier,
             disableScrollingText = disableScrollingText
@@ -322,13 +315,15 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
+            onMatchingSong = onMatchingSong,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -350,6 +345,7 @@ fun NonQueuedMediaItemMenu(
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
+    onMatchingSong: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
@@ -385,6 +381,7 @@ fun NonQueuedMediaItemMenu(
             onDeleteFromDatabase = onDeleteFromDatabase,
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
+            onMatchingSong =  onMatchingSong,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -412,6 +409,7 @@ fun NonQueuedMediaItemMenu(
             onDeleteFromDatabase = onDeleteFromDatabase,
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
+            onMatchingSong =  onMatchingSong,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -426,6 +424,7 @@ fun QueuedMediaItemMenu(
     navController: NavController,
     onDismiss: () -> Unit,
     onDownload: (() -> Unit)?,
+    onMatchingSong: (() -> Unit)? = null,
     mediaItem: MediaItem,
     indexInQueue: Int?,
     modifier: Modifier = Modifier,
@@ -464,12 +463,13 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             disableScrollingText = disableScrollingText
         )
@@ -498,13 +498,15 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.playlist.name}/$it")
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
+            onMatchingSong = onMatchingSong,
             disableScrollingText = disableScrollingText
         )
     }
@@ -533,6 +535,7 @@ fun BaseMediaItemMenu(
     onClosePlayer: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
+    onMatchingSong: (() -> Unit)?,
     disableScrollingText: Boolean
 ) {
     val context = LocalContext.current
@@ -554,17 +557,23 @@ fun BaseMediaItemMenu(
         onEnqueue = onEnqueue,
         onDownload = onDownload,
         onAddToPreferites = onAddToPreferites,
+        onMatchingSong =  onMatchingSong,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.asyncTransaction {
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
                     )
                 )
             }
+
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
 
             if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("BaseMediaItemMenu onAddToPlaylist mediaItem ${mediaItem.mediaId}")
@@ -637,16 +646,22 @@ fun MiniMediaItemMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            transaction {
-                Database.insert(mediaItem)
-                Database.insert(
+            Database.asyncTransaction {
+                insert(mediaItem)
+                insert(
                     SongPlaylistMap(
                         songId = mediaItem.mediaId,
-                        playlistId = Database.insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
                     )
                 )
             }
+
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
+
             onDismiss()
         },
         onGoToPlaylist = {
@@ -758,6 +773,7 @@ fun MediaItemMenu(
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onShare: () -> Unit,
     onGoToPlaylist: ((Long) -> Unit)? = null,
+    onMatchingSong: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
@@ -864,10 +880,9 @@ fun MediaItemMenu(
             placeholder = stringResource(R.string.title),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateSongTitle(mediaItem.mediaId, it)
+                    Database.asyncTransaction {
+                        updateSongTitle(mediaItem.mediaId, it)
                     }
-                    //context.toast("Song Saved $it")
                 }
             },
             prefix = MODIFIED_PREFIX
@@ -881,10 +896,9 @@ fun MediaItemMenu(
             placeholder = stringResource(R.string.authors),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateSongArtist(mediaItem.mediaId, it)
+                    Database.asyncTransaction {
+                        updateSongArtist(mediaItem.mediaId, it)
                     }
-                    //context.toast("Artist Changed $it")
                 }
             }
         )
@@ -1103,8 +1117,8 @@ fun MediaItemMenu(
                             ?.toString(),
                         onDownloadClick = {
                             binder?.cache?.removeResource(mediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(mediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( mediaItem.mediaId )
                             }
                             if (!isLocal)
                                 manageDownload(
@@ -1129,16 +1143,12 @@ fun MediaItemMenu(
                             color = colorPalette().favoritesIcon,
                             //color = if (likedAt == null) colorPalette().textDisabled else colorPalette().text,
                             onClick = {
-                                query {
-                                    if (Database.like(
-                                            mediaItem.mediaId,
-                                            //if (likedAt == null) System.currentTimeMillis() else null
-                                            setLikeState(likedAt)
-                                        ) == 0
-                                    ) {
-                                        Database.insert(mediaItem, Song::toggleLike)
+                                Database.asyncTransaction {
+                                    if ( like( mediaItem.mediaId, setLikeState(likedAt) ) == 0 ) {
+                                        insert(mediaItem, Song::toggleLike)
                                     }
                                 }
+                                MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
                             },
                             modifier = Modifier
                                 .padding(all = 4.dp)
@@ -1480,6 +1490,13 @@ fun MediaItemMenu(
                         icon = R.drawable.heart,
                         text = stringResource(R.string.add_to_favorites),
                         onClick = onAddToPreferites
+                    )
+
+                if (onMatchingSong != null)
+                    MenuEntry(
+                        icon = R.drawable.random,
+                        text = stringResource(R.string.match_song),
+                        onClick = { onMatchingSong() }
                     )
 
                 if (onAddToPlaylist != null) {

@@ -1,0 +1,40 @@
+name: Update contributors list in app
+
+on:
+  schedule:
+    - cron: '0 16 * * 5' # Every Friday at 16:00
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  update-contributors-list:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4.2.0
+
+      - name: Get contributors
+        run: |
+          curl -L -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/fast4x/rimusic/contributors >> contributors.json
+          #working-directory: ${{ github.workspace }}
+
+      - name: Copy generated contributors.json to its correct place
+        run: "mv contributors.json composeApp/src/androidMain/res/raw/contributors.json"
+        
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%m-%d-%Y')"
+        #run: echo "name=date::$(date +'%m-%d-%Y')" >> $GITHUB_OUTPUT
+
+      - name: Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5.0.1
+        with:
+          commit_message: "In app contributors list updated ${{ steps.date.outputs.date }}"

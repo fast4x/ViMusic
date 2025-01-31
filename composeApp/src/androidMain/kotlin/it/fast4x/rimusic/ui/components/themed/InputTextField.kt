@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
@@ -28,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.textCopyFromClipboard
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @Composable
 inline fun InputTextField(
@@ -40,13 +41,14 @@ inline fun InputTextField(
     crossinline setValue: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val txtFieldError = remember { mutableStateOf("") }
     val txtField = remember { mutableStateOf(value) }
     val value_cannot_empty = stringResource(R.string.value_cannot_be_empty)
 
     var copyText by remember { mutableStateOf(true) }
     if (copyText) {
-        txtField.value = textCopyFromClipboard()
+        txtField.value = textCopyFromClipboard(context)
         copyText = false
     }
 

@@ -74,3 +74,6 @@ data class MusicShelfRenderer(
                 ?.firstOrNull()
     }
 }
+
+fun List<Continuation>.getContinuation() =
+    firstOrNull()?.nextContinuationData?.continuation

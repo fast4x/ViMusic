@@ -3,6 +3,7 @@ package it.fast4x.rimusic.ui.components.themed
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.slideInVertically
@@ -194,7 +195,7 @@ fun BoxScope.FloatingActions(
     iconId: Int? = null,
     onClick: (() -> Unit)? = null
 ) {
-    val transition = updateTransition(transitionState, "")
+    val transition = rememberTransition(transitionState, "")
     val additionalBottomPadding = if ( NavigationBarPosition.Bottom.isCurrent() )
         Dimensions.additionalVerticalSpaceForFloatingAction else 0.dp
     //val bottomPaddingValues = windowInsets.only(WindowInsetsSides.Bottom).asPaddingValues()

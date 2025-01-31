@@ -67,11 +67,11 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.SearchQuery
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.TitleMiniSection
 import it.fast4x.rimusic.ui.items.AlbumItem
 import it.fast4x.rimusic.ui.items.ArtistItem
@@ -82,6 +82,7 @@ import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.forcePlay
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.pauseSearchHistoryKey
 import it.fast4x.rimusic.utils.preferences
@@ -91,8 +92,8 @@ import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @UnstableApi
 @ExperimentalFoundationApi
@@ -351,6 +352,9 @@ fun OnlineSearch(
                                 song = mediaItem,
                                 thumbnailSizePx = songThumbnailSizePx,
                                 thumbnailSizeDp = songThumbnailSizeDp,
+                                onThumbnailContent = {
+                                    NowPlayingSongIndicator(mediaItem.mediaId, binder?.player)
+                                },
                                 onDownloadClick = {},
                                 downloadState = downloadState,
                                 modifier = Modifier
@@ -370,7 +374,8 @@ fun OnlineSearch(
                                             binder?.player?.forcePlay(mediaItem)
                                         }
                                     ),
-                                disableScrollingText = disableScrollingText
+                                disableScrollingText = disableScrollingText,
+                                isNowPlaying = binder?.player?.isNowPlaying(mediaItem.mediaId) ?: false
                             )
                         }
                     }
@@ -541,14 +546,14 @@ fun OnlineSearch(
                                 indication = rippleIndication,
                                 interactionSource = remember { MutableInteractionSource() },
                                 onClick = {
-                                    query {
-                                        Database.delete(searchQuery)
+                                    Database.asyncTransaction {
+                                        delete(searchQuery)
                                     }
                                 },
                                 onLongClick = {
-                                    query {
+                                    Database.asyncTransaction {
                                         history.forEach {
-                                            Database.delete(it)
+                                            delete(it)
                                         }
                                     }
                                     reloadHistory = !reloadHistory

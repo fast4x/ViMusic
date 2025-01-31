@@ -2,8 +2,31 @@ package it.fast4x.innertube.utils
 
 import io.ktor.utils.io.CancellationException
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.SectionListRenderer
+import it.fast4x.innertube.requests.PlaylistPage
 import java.security.MessageDigest
+
+
+suspend fun Result<PlaylistPage>.completed(): Result<PlaylistPage> = runCatching {
+    val page = getOrThrow()
+    val songs = page.songs.toMutableList()
+    var continuation = page.songsContinuation
+
+    while (continuation != null) {
+        val continuationPage = YtMusic.getPlaylistContinuation(continuation).getOrNull()
+        if (continuationPage != null) {
+            songs += continuationPage.songs
+        }
+        continuation = continuationPage?.continuation
+    }
+    PlaylistPage(
+        playlist = page.playlist,
+        songs = songs,
+        songsContinuation = null,
+        continuation = page.continuation
+    )
+}
 
 internal fun SectionListRenderer.findSectionByTitle(text: String): SectionListRenderer.Content? {
     return contents?.find { content ->
@@ -63,3 +86,4 @@ fun parseCookieString(cookie: String): Map<String, String> =
 
 fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 fun sha1(str: String): String = MessageDigest.getInstance("SHA-1").digest(str.toByteArray()).toHex()
+

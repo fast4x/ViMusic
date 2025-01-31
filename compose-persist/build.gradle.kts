@@ -43,9 +43,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
+//    }
 
     kotlinOptions {
         jvmTarget = "21"

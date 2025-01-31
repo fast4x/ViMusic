@@ -27,9 +27,9 @@ import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 
 @Composable
 fun VideoItem(
@@ -43,7 +43,7 @@ fun VideoItem(
         thumbnailUrl = video.thumbnail?.url,
         duration = video.durationText,
         title = video.info?.name,
-        uploader = video.authors?.joinToString("") { it.name ?: "" },
+        uploader = video.authors?.joinToString(", ") { it.name ?: "" },
         views = video.viewsText,
         thumbnailHeightDp = thumbnailHeightDp,
         thumbnailWidthDp = thumbnailWidthDp,

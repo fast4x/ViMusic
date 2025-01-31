@@ -92,9 +92,7 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
+import it.fast4x.rimusic.service.modern.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -105,7 +103,7 @@ import it.fast4x.rimusic.ui.components.themed.IconInfo
 import it.fast4x.rimusic.ui.components.themed.InHistoryMediaItemMenu
 import it.fast4x.rimusic.ui.components.themed.InputTextDialog
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenuLibrary
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.PlaylistsItemMenu
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.SortMenu
@@ -123,7 +121,6 @@ import it.fast4x.rimusic.utils.autoShuffleKey
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
@@ -133,12 +130,12 @@ import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.isRecommendationEnabledKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxSongsInQueueKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberPreference
-import it.fast4x.rimusic.utils.resetFormatContentLength
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showSearchTabKey
@@ -146,9 +143,13 @@ import it.fast4x.rimusic.utils.songSortByKey
 import it.fast4x.rimusic.utils.songSortOrderKey
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.service.modern.isLocal
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -302,6 +303,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedBy { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedBy { it.relativePlayTime() }
                 }
             }
             SortOrder.Descending -> {
@@ -313,6 +315,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedByDescending { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedByDescending { it.relativePlayTime() }
                 }
             }
         }
@@ -729,12 +732,9 @@ fun BuiltInPlaylistSongs(
                                 if (songs.isNotEmpty() == true)
                                     songs.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        resetFormatContentLength(it.asMediaItem.mediaId)
-                                        /*
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            Database.deleteFormat( it.asMediaItem.mediaId )
                                         }
-                                         */
                                         manageDownload(
                                             context = context,
                                             mediaItem = it.asMediaItem,
@@ -772,12 +772,9 @@ fun BuiltInPlaylistSongs(
                                     if (songs.isNotEmpty() == true)
                                         songs.forEach {
                                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                            resetFormatContentLength(it.asMediaItem.mediaId)
-                                            /*
-                                            query {
-                                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.deleteFormat( it.asMediaItem.mediaId )
                                             }
-                                             */
                                             manageDownload(
                                                 context = context,
                                                 mediaItem = it.asMediaItem,
@@ -947,9 +944,9 @@ fun BuiltInPlaylistSongs(
                                         //Log.d("mediaItem", "next initial pos ${position}")
                                         if (listMediaItems.isEmpty()) {
                                             songs.forEachIndexed { index, song ->
-                                                transaction {
-                                                    Database.insert(song.asMediaItem)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song.asMediaItem)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.asMediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -962,9 +959,9 @@ fun BuiltInPlaylistSongs(
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
                                                 //Log.d("mediaItemMaxPos", position.toString())
-                                                transaction {
-                                                    Database.insert(song)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -1019,6 +1016,8 @@ fun BuiltInPlaylistSongs(
                                 SongSortBy.Title, SongSortBy.AlbumName -> stringResource(R.string.sort_title)
                                 SongSortBy.DatePlayed -> stringResource(R.string.sort_date_played)
                                 SongSortBy.PlayTime -> stringResource(R.string.sort_listening_time)
+                                SongSortBy.RelativePlayTime ->
+                                    stringResource(R.string.sort_relative_listening_time)
                                 SongSortBy.DateAdded -> stringResource(R.string.sort_date_added)
                                 SongSortBy.DateLiked -> stringResource(R.string.sort_date_liked)
                                 SongSortBy.Artist -> stringResource(R.string.sort_artist)
@@ -1038,6 +1037,7 @@ fun BuiltInPlaylistSongs(
                                             onDatePlayed = { sortBy = SongSortBy.DatePlayed },
                                             onDateAdded = { sortBy = SongSortBy.DateAdded },
                                             onPlayTime = { sortBy = SongSortBy.PlayTime },
+                                            onRelativePlayTime = {sortBy = SongSortBy.RelativePlayTime},
                                             onDateLiked = { sortBy = SongSortBy.DateLiked },
                                             onArtist = { sortBy = SongSortBy.Artist },
                                             onDuration = { sortBy = SongSortBy.Duration }
@@ -1172,7 +1172,8 @@ fun BuiltInPlaylistSongs(
                                     binder?.stopRadio()
                                     binder?.player?.forcePlay(it)
                                 },
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(it.mediaId) ?: false
                         )
                     }
                 }
@@ -1184,17 +1185,55 @@ fun BuiltInPlaylistSongs(
                         val isDownloaded =
                             if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
-                        SongItem(
+                Modifier
+                    .combinedClickable(
+                        onLongClick = {
+                            menuState.display {
+                                when (builtInPlaylist) {
+                                    BuiltInPlaylist.Favorites,
+                                    BuiltInPlaylist.Downloaded,
+                                    BuiltInPlaylist.Top -> NonQueuedMediaItemMenuLibrary(
+                                        navController = navController,
+                                        mediaItem = song.asMediaItem,
+                                        onDismiss = menuState::hide,
+                                        disableScrollingText = disableScrollingText
+                                    )
+
+                                    BuiltInPlaylist.Offline -> InHistoryMediaItemMenu(
+                                        navController = navController,
+                                        song = song,
+                                        onDismiss = menuState::hide,
+                                        disableScrollingText = disableScrollingText
+                                    )
+
+                                    BuiltInPlaylist.OnDevice, BuiltInPlaylist.All -> {}
+                                }
+                            }
+                        },
+                        onClick = {
+                            if (!selectItems) {
+                                searching = false
+                                filter = null
+                                val itemsLimited =
+                                    if (songs.size > maxSongsInQueue.number) songs.take(
+                                        maxSongsInQueue.number.toInt()
+                                    ) else songs
+                                binder?.stopRadio()
+                                binder?.player?.forcePlayAtIndex(
+                                    itemsLimited.map(Song::asMediaItem),
+                                    index
+                                )
+                            } else checkedState.value = !checkedState.value
+                        }
+                    )
+                    .background(color = colorPalette().background0)
+                SongItem(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                resetFormatContentLength(song.asMediaItem.mediaId)
-                                /*
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
-
-                                 */
 
                                 if (!isLocal)
                                     manageDownload(
@@ -1228,8 +1267,8 @@ fun BuiltInPlaylistSongs(
                                             .align(Alignment.BottomCenter)
                                     )
                                 }
-                                if (nowPlayingItem > -1)
-                                    NowPlayingShow(song.asMediaItem.mediaId)
+
+                                    NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
 
                                 if (builtInPlaylist == BuiltInPlaylist.Top)
                                     BasicText(
@@ -1270,50 +1309,9 @@ fun BuiltInPlaylistSongs(
                                     )
                                 else checkedState.value = false
                             },
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onLongClick = {
-                                        menuState.display {
-                                            when (builtInPlaylist) {
-                                                BuiltInPlaylist.Favorites,
-                                                BuiltInPlaylist.Downloaded,
-                                                BuiltInPlaylist.Top -> NonQueuedMediaItemMenuLibrary(
-                                                    navController = navController,
-                                                    mediaItem = song.asMediaItem,
-                                                    onDismiss = menuState::hide,
-                                                    disableScrollingText = disableScrollingText
-                                                )
-
-                                                BuiltInPlaylist.Offline -> InHistoryMediaItemMenu(
-                                                    navController = navController,
-                                                    song = song,
-                                                    onDismiss = menuState::hide,
-                                                    disableScrollingText = disableScrollingText
-                                                )
-
-                                                BuiltInPlaylist.OnDevice, BuiltInPlaylist.All -> {}
-                                            }
-                                        }
-                                    },
-                                    onClick = {
-                                        if (!selectItems) {
-                                            searching = false
-                                            filter = null
-                                            val itemsLimited =
-                                                if (songs.size > maxSongsInQueue.number) songs.take(
-                                                    maxSongsInQueue.number.toInt()
-                                                ) else songs
-                                            binder?.stopRadio()
-                                            binder?.player?.forcePlayAtIndex(
-                                                itemsLimited.map(Song::asMediaItem),
-                                                index
-                                            )
-                                        } else checkedState.value = !checkedState.value
-                                    }
-                                )
-                                .background(color = colorPalette().background0)
-                                .animateItemPlacement(),
-                            disableScrollingText = disableScrollingText
+                            modifier = Modifier.animateItem(),
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false
                         )
                     /*
                     },

@@ -38,7 +38,6 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
-import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.media.VolumeProviderCompat
 import androidx.media3.common.AudioAttributes
@@ -51,12 +50,8 @@ import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
@@ -80,32 +75,30 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.NavigationEndpoint
-import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.models.bodies.SearchBody
-import it.fast4x.innertube.requests.player
 import it.fast4x.innertube.requests.searchPage
-import it.fast4x.innertube.utils.ProxyPreferences
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MainActivity
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.DurationInMilliseconds
 import it.fast4x.rimusic.enums.ExoPlayerCacheLocation
 import it.fast4x.rimusic.enums.ExoPlayerDiskCacheMaxSize
 import it.fast4x.rimusic.enums.ExoPlayerMinTimeForEvent
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.extensions.audiovolume.AudioVolumeObserver
 import it.fast4x.rimusic.extensions.audiovolume.OnAudioVolumeChangedListener
 import it.fast4x.rimusic.extensions.discord.sendDiscordPresence
 import it.fast4x.rimusic.models.Event
-import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.models.PersistentQueue
 import it.fast4x.rimusic.models.PersistentSong
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.asMediaItem
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.widgets.PlayerHorizontalWidget
 import it.fast4x.rimusic.ui.widgets.PlayerVerticalWidget
@@ -114,12 +107,8 @@ import it.fast4x.rimusic.utils.TimerJob
 import it.fast4x.rimusic.utils.YouTubeRadio
 import it.fast4x.rimusic.utils.activityPendingIntent
 import it.fast4x.rimusic.utils.asSong
-import it.fast4x.rimusic.utils.broadCastPendingIntent
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.AudioQualityFormat
-import it.fast4x.rimusic.enums.PopupType
-import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.utils.audioQualityFormatKey
+import it.fast4x.rimusic.utils.broadCastPendingIntent
 import it.fast4x.rimusic.utils.closebackgroundPlayerKey
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
 import it.fast4x.rimusic.utils.discoverKey
@@ -129,8 +118,6 @@ import it.fast4x.rimusic.utils.exoPlayerCustomCacheKey
 import it.fast4x.rimusic.utils.exoPlayerDiskCacheMaxSizeKey
 import it.fast4x.rimusic.utils.exoPlayerMinTimeForEventKey
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
-import it.fast4x.rimusic.utils.forceSeekToNext
-import it.fast4x.rimusic.utils.forceSeekToPrevious
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
@@ -192,18 +179,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import me.knighthat.appContext
-import okhttp3.OkHttpClient
+import it.fast4x.rimusic.appContext
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.net.ConnectException
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
@@ -434,7 +414,7 @@ class PlayerService : InvincibleService(),
         val exoPlayerCustomCache = preferences.getInt(exoPlayerCustomCacheKey, 32) * 1000 * 1000L
 
         val cacheEvictor = when (val size =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)) {
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)) {
             ExoPlayerDiskCacheMaxSize.Unlimited -> NoOpCacheEvictor()
             ExoPlayerDiskCacheMaxSize.Custom -> LeastRecentlyUsedCacheEvictor(exoPlayerCustomCache)
             else -> LeastRecentlyUsedCacheEvictor(size.bytes)
@@ -450,7 +430,7 @@ class PlayerService : InvincibleService(),
         var cacheDirName = "rimusic_cache"
 
         val cacheSize =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)
 
         if (cacheSize == ExoPlayerDiskCacheMaxSize.Disabled) cacheDirName = "rimusic_no_cache"
 
@@ -766,7 +746,11 @@ class PlayerService : InvincibleService(),
             player.stop()
             player.release()
 
-            unregisterReceiver(notificationActionReceiver)
+            try{
+                unregisterReceiver(notificationActionReceiver)
+            } catch (e: Exception){
+                Timber.e("PlayerService onDestroy unregisterReceiver notificationActionReceiver ${e.stackTraceToString()}")
+            }
 
             mediaSession.isActive = false
             mediaSession.release()
@@ -840,8 +824,8 @@ class PlayerService : InvincibleService(),
         val totalPlayTimeMs = playbackStats.totalPlayTimeMs
 
         if (totalPlayTimeMs > 5000) {
-            query {
-                Database.incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
+            Database.asyncTransaction {
+                incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
             }
         }
 
@@ -850,9 +834,9 @@ class PlayerService : InvincibleService(),
             preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
 
         if (totalPlayTimeMs > minTimeForEvent.ms) {
-            query {
+            Database.asyncTransaction {
                 try {
-                    Database.insert(
+                    insert(
                         Event(
                             songId = mediaItem.mediaId,
                             timestamp = System.currentTimeMillis(),
@@ -1104,9 +1088,9 @@ class PlayerService : InvincibleService(),
                 position = if (index == mediaItemIndex) mediaItemPosition else null
             )
         }.let { queuedMediaItems ->
-            query {
-                Database.clearQueue()
-                Database.insert(queuedMediaItems)
+            Database.asyncTransaction {
+                clearQueue()
+                insert(queuedMediaItems)
             }
         }
     }
@@ -1117,10 +1101,10 @@ class PlayerService : InvincibleService(),
     private fun maybeRestorePlayerQueue() {
         if (!isPersistentQueueEnabled) return
 
-        query {
+        Database.asyncQuery {
             val queuedSong = Database.queue()
 
-            if (queuedSong.isEmpty()) return@query
+            if (queuedSong.isEmpty()) return@asyncQuery
 
             val index = queuedSong.indexOfFirst { it.position != null }.coerceAtLeast(0)
 
@@ -1895,7 +1879,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 var mediaItems = listOf<MediaItem>()
                 runBlocking {
@@ -1914,7 +1899,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 var songs = listOf<Song>()
                 runBlocking {
@@ -1935,7 +1921,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 isLoadingRadio = true
                 coroutineScope.launch(Dispatchers.Main) {
@@ -1974,7 +1961,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 isDiscoverEnabled,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 isLoadingRadio = true
                 radioJob = coroutineScope.launch(Dispatchers.Main) {
@@ -1982,9 +1970,7 @@ class PlayerService : InvincibleService(),
                     val songs = it.process()
 
                     songs.forEach {
-                        transaction {
-                            Database.insert(it)
-                        }
+                        Database.asyncTransaction { insert(it) }
                     }
 
                     if (justAdd) {
@@ -2029,8 +2015,8 @@ class PlayerService : InvincibleService(),
         @FlowPreview
         fun toggleLike() = mediaItemState.value?.let { mediaItem ->
             //mediaItemToggleLike(mediaItem)
-            transaction {
-                Database.like(
+            Database.asyncTransaction {
+                like(
                     mediaItem.mediaId,
                     if (isLikedState.value) null else System.currentTimeMillis()
                 )

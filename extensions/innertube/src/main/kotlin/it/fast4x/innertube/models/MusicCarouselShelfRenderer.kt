@@ -26,6 +26,7 @@ data class MusicCarouselShelfRenderer(
             val moreContentButton: MoreContentButton?,
             val title: Runs?,
             val strapline: Runs?,
+            val thumbnail: ThumbnailRenderer?,
         ) {
             @Serializable
             data class MoreContentButton(

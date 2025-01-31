@@ -6,5 +6,6 @@ enum class ColorPaletteName {
     PureBlack,
     ModernBlack,
     MaterialYou,
-    Customized
+    Customized,
+    CustomColor
 }

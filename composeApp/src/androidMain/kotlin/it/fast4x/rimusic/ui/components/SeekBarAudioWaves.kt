@@ -110,10 +110,11 @@ private fun FakeAudioWavePill(
             maxWaveHeightFraction,
             percentageToCenterPoint,
         )
-        if (maxHeightFraction <= minWaveHeightFraction) {
-            maxHeightFraction
+        val validMaxHeightFraction = if (maxHeightFraction.isNaN()) 0.1f else maxHeightFraction
+        if (validMaxHeightFraction <= minWaveHeightFraction) {
+            validMaxHeightFraction
         } else {
-            Random.nextDouble(minWaveHeightFraction.toDouble(), maxHeightFraction.toDouble()).toFloat()
+            Random.nextDouble(minWaveHeightFraction.toDouble(), validMaxHeightFraction.toDouble()).toFloat()
         }
     }
     val hasPlayedThisWave = remember(progressPercentage, numberOfWaves, waveIndex) {

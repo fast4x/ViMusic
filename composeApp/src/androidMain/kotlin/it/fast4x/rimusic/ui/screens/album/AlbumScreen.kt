@@ -39,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -54,11 +53,12 @@ import com.valentinilk.shimmer.shimmer
 import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.models.bodies.BrowseBody
-import it.fast4x.innertube.requests.albumPage
+import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.requests.AlbumPage
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlayerPosition
 import it.fast4x.rimusic.enums.ThumbnailRoundness
@@ -66,7 +66,7 @@ import it.fast4x.rimusic.enums.TransitionEffect
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.SongAlbumMap
-import it.fast4x.rimusic.query
+import it.fast4x.rimusic.ui.components.navigation.header.AppHeader
 import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.HeaderPlaceholder
@@ -82,10 +82,8 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.transitionEffectKey
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.component.header.AppHeader
+import timber.log.Timber
 
 
 @ExperimentalMaterialApi
@@ -118,67 +116,123 @@ fun AlbumScreen(
     }
 
     var album by persist<Album?>("album/$browseId/album")
-    var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/$browseId/albumPage")
+    //var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/$browseId/albumPage")
+    var albumPage by persist<AlbumPage?>("album/$browseId/albumPage")
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
     PersistMapCleanup(tagPrefix = "album/$browseId/")
 
-
     LaunchedEffect(Unit) {
         Database
-            .album(browseId)
-            .combine(snapshotFlow { tabIndex }) { album, tabIndex -> album to tabIndex }
-            .collect { (currentAlbum,
-                          // tabIndex
-            ) ->
+            .album(browseId).collect { currentAlbum ->
                 album = currentAlbum
-
-                if (albumPage == null
-                    //&& (currentAlbum?.timestamp == null || tabIndex == 1)
-                    ) {
-
-                    withContext(Dispatchers.IO) {
-                        Innertube.albumPage(BrowseBody(browseId = browseId))
-                            ?.onSuccess { currentAlbumPage ->
+                withContext(Dispatchers.IO) {
+                    if (albumPage == null)
+                        YtMusic.getAlbum(browseId)
+                            .onSuccess { currentAlbumPage ->
                                 albumPage = currentAlbumPage
-
+                                println("AlbumScreen otherVersion ${currentAlbumPage.otherVersions}")
                                 Database.upsert(
                                     Album(
                                         id = browseId,
-                                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else currentAlbumPage?.title,
-                                        thumbnailUrl = if (album?.thumbnailUrl?.startsWith(MODIFIED_PREFIX) == true) album?.thumbnailUrl else currentAlbumPage?.thumbnail?.url,
-                                        year = currentAlbumPage?.year,
-                                        authorsText = if (album?.authorsText?.startsWith(MODIFIED_PREFIX) == true) album?.authorsText else currentAlbumPage?.authors
+                                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else currentAlbumPage.album.title,
+                                        thumbnailUrl = if (album?.thumbnailUrl?.startsWith(
+                                                MODIFIED_PREFIX
+                                            ) == true
+                                        ) album?.thumbnailUrl else currentAlbumPage.album.thumbnail?.url,
+                                        year = currentAlbumPage.album.year,
+                                        authorsText = if (album?.authorsText?.startsWith(
+                                                MODIFIED_PREFIX
+                                            ) == true
+                                        ) album?.authorsText else currentAlbumPage.album.authors
                                             ?.joinToString("") { it.name ?: "" },
                                         shareUrl = currentAlbumPage.url,
                                         timestamp = System.currentTimeMillis(),
                                         bookmarkedAt = album?.bookmarkedAt
                                     ),
                                     currentAlbumPage
-                                        .songsPage
-                                        ?.items?.distinct()
-                                        ?.map(Innertube.SongItem::asMediaItem)
-                                        ?.onEach(Database::insert)
-                                        ?.mapIndexed { position, mediaItem ->
+                                        .songs.distinct()
+                                        .map(Innertube.SongItem::asMediaItem)
+                                        .onEach(Database::insert)
+                                        .mapIndexed { position, mediaItem ->
                                             SongAlbumMap(
                                                 songId = mediaItem.mediaId,
                                                 albumId = browseId,
                                                 position = position
                                             )
-                                        } ?: emptyList()
+                                        }
                                 )
                             }
-                            /*
-                            ?.onFailure {
-                                println("mediaItem error home artist ${it.message}")
+                            .onFailure {
+                                Timber.e("AlbumScreen error ${it.stackTraceToString()}")
+//                            if (it.message?.contains("NOT_FOUND") == true) {
+//                                // This album no longer exists in YouTube Music
+//                                Database.asyncTransaction {
+//                                    album?.let(::delete)
+//                                }
+//                            }
                             }
-                             */
-                    }
-
                 }
             }
+
     }
+
+//    LaunchedEffect(Unit) {
+//        Database
+//            .album(browseId)
+//            .combine(snapshotFlow { tabIndex }) { album, tabIndex -> album to tabIndex }
+//            .collect { (currentAlbum,
+//                          // tabIndex
+//            ) ->
+//                album = currentAlbum
+//
+//                if (albumPage == null
+//                    //&& (currentAlbum?.timestamp == null || tabIndex == 1)
+//                    ) {
+//
+//                    withContext(Dispatchers.IO) {
+//                        Innertube.albumPage(BrowseBody(browseId = browseId))
+//                            ?.onSuccess { currentAlbumPage ->
+//                                albumPage = currentAlbumPage
+//
+//                                println("mediaItem albumScreen ${currentAlbumPage.songsPage}")
+//                                Database.upsert(
+//                                    Album(
+//                                        id = browseId,
+//                                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else currentAlbumPage?.title,
+//                                        thumbnailUrl = if (album?.thumbnailUrl?.startsWith(MODIFIED_PREFIX) == true) album?.thumbnailUrl else currentAlbumPage?.thumbnail?.url,
+//                                        year = currentAlbumPage?.year,
+//                                        authorsText = if (album?.authorsText?.startsWith(MODIFIED_PREFIX) == true) album?.authorsText else currentAlbumPage?.authors
+//                                            ?.joinToString("") { it.name ?: "" },
+//                                        shareUrl = currentAlbumPage.url,
+//                                        timestamp = System.currentTimeMillis(),
+//                                        bookmarkedAt = album?.bookmarkedAt
+//                                    ),
+//                                    currentAlbumPage
+//                                        .songsPage
+//                                        ?.items?.distinct()
+//                                        ?.map(Innertube.SongItem::asMediaItem)
+//                                        ?.onEach(Database::insert)
+//                                        ?.mapIndexed { position, mediaItem ->
+//                                            SongAlbumMap(
+//                                                songId = mediaItem.mediaId,
+//                                                albumId = browseId,
+//                                                position = position
+//                                            )
+//                                        } ?: emptyList()
+//                                )
+//                            }
+//
+//                            ?.onFailure {
+//                                println("mediaItem error albumScreen ${it.message}")
+//                            }
+//
+//                    }
+//
+//                }
+//            }
+//    }
 
     /*
     LaunchedEffect(Unit ) {
@@ -195,245 +249,245 @@ fun AlbumScreen(
      */
 
 
+    val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit =
+        { textButton ->
+            if (album?.timestamp == null) {
+                HeaderPlaceholder(
+                    modifier = Modifier
+                        .shimmer()
+                )
+            } else {
+                val context = LocalContext.current
 
-            val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit =
-                { textButton ->
-                    if (album?.timestamp == null) {
-                        HeaderPlaceholder(
+                Header(
+                    //title = album?.title ?: "Unknown"
+                    title = "",
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    actionsContent = {
+                        textButton?.invoke()
+
+
+                        Spacer(
                             modifier = Modifier
-                                .shimmer()
+                                .weight(1f)
                         )
-                    } else {
-                        val context = LocalContext.current
 
-                        Header(
-                            //title = album?.title ?: "Unknown"
-                            title = "",
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            actionsContent = {
-                                textButton?.invoke()
+                        HeaderIconButton(
+                            icon = if (album?.bookmarkedAt == null) {
+                                R.drawable.bookmark_outline
+                            } else {
+                                R.drawable.bookmark
+                            },
+                            color = colorPalette().accent,
+                            onClick = {
+                                val bookmarkedAt =
+                                    if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
+                                Database.asyncTransaction {
+                                    album?.copy(bookmarkedAt = bookmarkedAt)
+                                        ?.let(::update)
+                                }
+                            }
+                        )
 
-                                Spacer(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                )
-
-                                HeaderIconButton(
-                                    icon = if (album?.bookmarkedAt == null) {
-                                        R.drawable.bookmark_outline
-                                    } else {
-                                        R.drawable.bookmark
-                                    },
-                                    color = colorPalette().accent,
-                                    onClick = {
-                                        val bookmarkedAt =
-                                            if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
-
-                                        query {
-                                            album
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(Database::update)
-                                        }
+                        HeaderIconButton(
+                            icon = R.drawable.share_social,
+                            color = colorPalette().text,
+                            onClick = {
+                                album?.shareUrl?.let { url ->
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, url)
                                     }
+
+                                    context.startActivity(
+                                        Intent.createChooser(
+                                            sendIntent,
+                                            null
+                                        )
+                                    )
+                                }
+                            }
+                        )
+                    },
+                    disableScrollingText = disableScrollingText
+                )
+            }
+        }
+
+    val thumbnailContent =
+        adaptiveThumbnailContent(
+            album?.timestamp == null,
+            album?.thumbnailUrl,
+            showIcon = false, //albumPage?.otherVersions?.isNotEmpty(),
+            onOtherVersionAvailable = {
+                //println("mediaItem Click other version")
+            },
+            //shape = thumbnailRoundness.shape()
+            onClick = { changeShape = !changeShape },
+            shape = if (changeShape) CircleShape else thumbnailRoundness.shape(),
+        )
+
+    val transitionEffect by rememberPreference(transitionEffectKey, TransitionEffect.Scale)
+    val playerPosition by rememberPreference(playerPositionKey, PlayerPosition.Bottom)
+
+    androidx.compose.material3.Scaffold(
+        modifier = Modifier,
+        containerColor = colorPalette().background0,
+        topBar = {
+            if (UiType.RiMusic.isCurrent())
+                AppHeader(navController).Draw()
+        }
+    ) {
+        //**
+        Box(
+            modifier = Modifier
+                .padding(it)
+                .fillMaxSize()
+        ) {
+
+            Row(
+                modifier = Modifier
+                    .background(colorPalette().background0)
+                    .fillMaxSize()
+            ) {
+                val topPadding = if (UiType.ViMusic.isCurrent()) 30.dp else 0.dp
+
+                AnimatedContent(
+                    targetState = 0,
+                    transitionSpec = {
+                        when (transitionEffect) {
+                            TransitionEffect.None -> EnterTransition.None togetherWith ExitTransition.None
+                            TransitionEffect.Expand -> expandIn(
+                                animationSpec = tween(
+                                    350,
+                                    easing = LinearOutSlowInEasing
+                                ), expandFrom = Alignment.BottomStart
+                            ).togetherWith(
+                                shrinkOut(
+                                    animationSpec = tween(
+                                        350,
+                                        easing = FastOutSlowInEasing
+                                    ), shrinkTowards = Alignment.CenterStart
+                                )
+                            )
+
+                            TransitionEffect.Fade -> fadeIn(animationSpec = tween(350)).togetherWith(
+                                fadeOut(animationSpec = tween(350))
+                            )
+
+                            TransitionEffect.Scale -> scaleIn(animationSpec = tween(350)).togetherWith(
+                                scaleOut(animationSpec = tween(350))
+                            )
+
+                            TransitionEffect.SlideHorizontal, TransitionEffect.SlideVertical -> {
+                                val slideDirection = when (targetState > initialState) {
+                                    true -> {
+                                        if (transitionEffect == TransitionEffect.SlideHorizontal)
+                                            AnimatedContentTransitionScope.SlideDirection.Left
+                                        else AnimatedContentTransitionScope.SlideDirection.Up
+                                    }
+
+                                    false -> {
+                                        if (transitionEffect == TransitionEffect.SlideHorizontal)
+                                            AnimatedContentTransitionScope.SlideDirection.Right
+                                        else AnimatedContentTransitionScope.SlideDirection.Down
+                                    }
+                                }
+
+                                val animationSpec = spring(
+                                    dampingRatio = 0.9f,
+                                    stiffness = Spring.StiffnessLow,
+                                    visibilityThreshold = IntOffset.VisibilityThreshold
                                 )
 
-                                HeaderIconButton(
-                                    icon = R.drawable.share_social,
-                                    color = colorPalette().text,
-                                    onClick = {
-                                        album?.shareUrl?.let { url ->
-                                            val sendIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                type = "text/plain"
-                                                putExtra(Intent.EXTRA_TEXT, url)
-                                            }
+                                slideIntoContainer(
+                                    slideDirection,
+                                    animationSpec
+                                ) togetherWith
+                                        slideOutOfContainer(slideDirection, animationSpec)
+                            }
+                        }
+                    },
+                    label = "",
+                    modifier = Modifier
+                        //.fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(top = topPadding)
+                ) { currentTabIndex ->
+                    saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
+                        when (currentTabIndex) {
+                            0 -> AlbumDetails(
+                                navController = navController,
+                                browseId = browseId,
+                                albumPage = albumPage,
+                                headerContent = headerContent,
+                                thumbnailContent = thumbnailContent,
+                                onSearchClick = {
+                                    //searchRoute("")
+                                    navController.navigate(NavRoutes.search.name)
+                                },
+                                onSettingsClick = {
+                                    //settingsRoute()
+                                    navController.navigate(NavRoutes.settings.name)
+                                }
+                            )
 
-                                            context.startActivity(
-                                                Intent.createChooser(
-                                                    sendIntent,
-                                                    null
+                            1 -> {
+                                val thumbnailSizeDp = 108.dp
+                                val thumbnailSizePx = thumbnailSizeDp.px
+
+                                ItemsPage(
+                                    tag = "album/$browseId/alternatives",
+                                    headerContent = headerContent,
+                                    initialPlaceholderCount = 1,
+                                    continuationPlaceholderCount = 1,
+                                    emptyItemsText = stringResource(R.string.album_no_alternative_version),
+                                    itemsPageProvider = albumPage?.let {
+                                        ({
+                                            Result.success(
+                                                Innertube.ItemsPage(
+                                                    items = albumPage?.otherVersions,
+                                                    continuation = null
                                                 )
                                             )
-                                        }
+                                        })
+                                    },
+                                    itemContent = { album ->
+                                        AlbumItem(
+                                            album = album,
+                                            thumbnailSizePx = thumbnailSizePx,
+                                            thumbnailSizeDp = thumbnailSizeDp,
+                                            modifier = Modifier
+                                                .clickable {
+                                                    //albumRoute(album.key)
+                                                    navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
+                                                },
+                                            disableScrollingText = disableScrollingText
+                                        )
+                                    },
+                                    itemPlaceholderContent = {
+                                        AlbumItemPlaceholder(thumbnailSizeDp = thumbnailSizeDp)
                                     }
                                 )
-                            },
-                            disableScrollingText = disableScrollingText
-                        )
-                    }
-                }
-
-            val thumbnailContent =
-                adaptiveThumbnailContent(
-                    album?.timestamp == null,
-                    album?.thumbnailUrl,
-                    showIcon = false, //albumPage?.otherVersions?.isNotEmpty(),
-                    onOtherVersionAvailable = {
-                        //println("mediaItem Click other version")
-                    },
-                    //shape = thumbnailRoundness.shape()
-                    onClick = { changeShape = !changeShape },
-                    shape = if (changeShape) CircleShape else thumbnailRoundness.shape(),
-                )
-
-            val transitionEffect by rememberPreference(transitionEffectKey, TransitionEffect.Scale)
-            val playerPosition by rememberPreference(playerPositionKey, PlayerPosition.Bottom)
-
-            androidx.compose.material3.Scaffold(
-                modifier = Modifier,
-                containerColor = colorPalette().background0,
-                topBar = {
-                    if( UiType.RiMusic.isCurrent() )
-                        AppHeader( navController ).Draw()
-                }
-            ) {
-                //**
-                Box(
-                    modifier = Modifier
-                        .padding(it)
-                        .fillMaxSize()
-                ) {
-
-                    Row(
-                        modifier = Modifier
-                            .background(colorPalette().background0)
-                            .fillMaxSize()
-                    ) {
-                        val topPadding = if ( UiType.ViMusic.isCurrent() ) 30.dp else 0.dp
-
-                        AnimatedContent(
-                            targetState = 0,
-                            transitionSpec = {
-                                when (transitionEffect) {
-                                    TransitionEffect.None -> EnterTransition.None togetherWith ExitTransition.None
-                                    TransitionEffect.Expand -> expandIn(
-                                        animationSpec = tween(
-                                            350,
-                                            easing = LinearOutSlowInEasing
-                                        ), expandFrom = Alignment.BottomStart
-                                    ).togetherWith(
-                                        shrinkOut(
-                                            animationSpec = tween(
-                                                350,
-                                                easing = FastOutSlowInEasing
-                                            ), shrinkTowards = Alignment.CenterStart
-                                        )
-                                    )
-
-                                    TransitionEffect.Fade -> fadeIn(animationSpec = tween(350)).togetherWith(
-                                        fadeOut(animationSpec = tween(350))
-                                    )
-
-                                    TransitionEffect.Scale -> scaleIn(animationSpec = tween(350)).togetherWith(
-                                        scaleOut(animationSpec = tween(350))
-                                    )
-
-                                    TransitionEffect.SlideHorizontal, TransitionEffect.SlideVertical -> {
-                                        val slideDirection = when (targetState > initialState) {
-                                            true -> {
-                                                if (transitionEffect == TransitionEffect.SlideHorizontal)
-                                                    AnimatedContentTransitionScope.SlideDirection.Left
-                                                else AnimatedContentTransitionScope.SlideDirection.Up
-                                            }
-
-                                            false -> {
-                                                if (transitionEffect == TransitionEffect.SlideHorizontal)
-                                                    AnimatedContentTransitionScope.SlideDirection.Right
-                                                else AnimatedContentTransitionScope.SlideDirection.Down
-                                            }
-                                        }
-
-                                        val animationSpec = spring(
-                                            dampingRatio = 0.9f,
-                                            stiffness = Spring.StiffnessLow,
-                                            visibilityThreshold = IntOffset.VisibilityThreshold
-                                        )
-
-                                        slideIntoContainer(
-                                            slideDirection,
-                                            animationSpec
-                                        ) togetherWith
-                                                slideOutOfContainer(slideDirection, animationSpec)
-                                    }
-                                }
-                            },
-                            label = "",
-                            modifier = Modifier
-                                //.fillMaxWidth()
-                                .fillMaxHeight()
-                                .padding(top = topPadding)
-                        ) { currentTabIndex ->
-                            saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                                when (currentTabIndex) {
-                                    0 -> AlbumDetails(
-                                        navController = navController,
-                                        browseId = browseId,
-                                        albumPage = albumPage,
-                                        headerContent = headerContent,
-                                        thumbnailContent = thumbnailContent,
-                                        onSearchClick = {
-                                            //searchRoute("")
-                                            navController.navigate(NavRoutes.search.name)
-                                        },
-                                        onSettingsClick = {
-                                            //settingsRoute()
-                                            navController.navigate(NavRoutes.settings.name)
-                                        }
-                                    )
-
-                                    1 -> {
-                                        val thumbnailSizeDp = 108.dp
-                                        val thumbnailSizePx = thumbnailSizeDp.px
-
-                                        ItemsPage(
-                                            tag = "album/$browseId/alternatives",
-                                            headerContent = headerContent,
-                                            initialPlaceholderCount = 1,
-                                            continuationPlaceholderCount = 1,
-                                            emptyItemsText = stringResource(R.string.album_no_alternative_version),
-                                            itemsPageProvider = albumPage?.let {
-                                                ({
-                                                    Result.success(
-                                                        Innertube.ItemsPage(
-                                                            items = albumPage?.otherVersions,
-                                                            continuation = null
-                                                        )
-                                                    )
-                                                })
-                                            },
-                                            itemContent = { album ->
-                                                AlbumItem(
-                                                    album = album,
-                                                    thumbnailSizePx = thumbnailSizePx,
-                                                    thumbnailSizeDp = thumbnailSizeDp,
-                                                    modifier = Modifier
-                                                        .clickable {
-                                                            //albumRoute(album.key)
-                                                            navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
-                                                        },
-                                                    disableScrollingText = disableScrollingText
-                                                )
-                                            },
-                                            itemPlaceholderContent = {
-                                                AlbumItemPlaceholder(thumbnailSizeDp = thumbnailSizeDp)
-                                            }
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
-
-                    //**
-                    Box(
-                        modifier = modifier.padding( vertical = 5.dp ).align(
-                            if( playerPosition == PlayerPosition.Top ) Alignment.TopCenter else Alignment.BottomCenter
-                        )
-                    ) {
-                        miniPlayer.invoke()
-                    }
                 }
             }
+
+            //**
+            Box(
+                modifier = modifier
+                    .padding(vertical = 5.dp)
+                    .align(
+                        if (playerPosition == PlayerPosition.Top) Alignment.TopCenter else Alignment.BottomCenter
+                    )
+            ) {
+                miniPlayer.invoke()
+            }
+        }
+    }
 
 }

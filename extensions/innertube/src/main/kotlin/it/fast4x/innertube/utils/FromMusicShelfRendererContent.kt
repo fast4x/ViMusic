@@ -24,6 +24,12 @@ fun Innertube.SongItem.Companion.from(content: MusicShelfRenderer.Content): Inne
         }
         ?.let(Innertube::Info)
 
+    val isExplicit = content.musicResponsiveListItemRenderer
+                                      ?.badges
+                                      ?.any {
+                                          it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
+                                      } ?: false
+
     return Innertube.SongItem(
         info = mainRuns
             .firstOrNull()
@@ -36,7 +42,8 @@ fun Innertube.SongItem.Companion.from(content: MusicShelfRenderer.Content): Inne
             .lastOrNull()
             ?.firstOrNull()?.text,
         thumbnail = content
-            .thumbnail
+            .thumbnail,
+        explicit = isExplicit
     ).takeIf { it.info?.endpoint?.videoId != null }
 }
 

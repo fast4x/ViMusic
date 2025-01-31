@@ -58,7 +58,7 @@ import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.multiFloatActionIconOffsetXkey
 import it.fast4x.rimusic.utils.multiFloatActionIconOffsetYkey
 import it.fast4x.rimusic.utils.rememberPreference
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 enum class MultiFabState {
     Collapsed, Expanded

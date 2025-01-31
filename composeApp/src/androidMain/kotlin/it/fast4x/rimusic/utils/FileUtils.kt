@@ -4,6 +4,10 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
+import it.fast4x.rimusic.R
+import it.fast4x.rimusic.enums.LogType
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -124,3 +128,30 @@ fun tryCopyDir() {
     }
 }
  */
+
+fun loadAppLog(context: Context, type: LogType): String? {
+    val file = File(context.filesDir.resolve("logs"),
+        when (type) {
+            LogType.Default ->  "RiMusic_log.txt"
+            LogType.Crash ->    "RiMusic_crash_log.txt"
+        }
+    )
+    if (file.exists()) {
+        SmartMessage(context.resources.getString(R.string.value_copied), type = PopupType.Info, context = context)
+        return file.readText()
+    } else
+        SmartMessage(context.resources.getString(R.string.no_log_available), type = PopupType.Info, context = context)
+    return null
+}
+
+fun saveFileToInternalStorage(context: Context, fileName: String, fileContent: String) {
+    try {
+        val file = File(context.filesDir.resolve("logs"), fileName)
+        file.writeText(fileContent)
+    } catch (e: IOException) {
+        Timber.e("Failed to save file $fileName to internal storage: $e")
+
+    }
+
+
+}

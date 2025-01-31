@@ -25,7 +25,7 @@ import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
 import it.fast4x.rimusic.utils.lastVideoIdKey
 import it.fast4x.rimusic.utils.lastVideoSecondsKey
 import it.fast4x.rimusic.utils.rememberPreference
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 
 @Composable

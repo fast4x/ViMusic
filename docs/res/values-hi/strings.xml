@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="opensource_multilingual_application">यूट्यूब म्यूजिक से संगीत स्स्त्रोतावहन करने हेतू एक मुक्त स्रोता बहुभाषी एंड्रॉयड एप्लिकेशन।</string>
-    <string name="your_library">Your library.</string>
+    <string name="your_library">सभी संग्रह</string>
     <string name="organized_in_one_place">आपके पसंदीदा गाने, डाउनलोड किए गए गाने, सुने गए गाने और आपकी सभी प्लेलिस्ट, सब कुछ एक ही स्थान पर |</string>
     <string name="beautiful_player">A beautiful player.</string>
-    <string name="listen_songs_sing_lyrics">Listen to songs, sing with lyrics, translate words with built-in translator.</string>
+    <string name="listen_songs_sing_lyrics">गाने सुने, बोल के साथ गाये, निर्मित अनुवादक के साथ</string>
     <string name="many_effects">Many effects.</string>
     <string name="visualizer_preview_timeline">Visualizer, preview, timeline, play button, apply the effects you prefer..</string>
     <string name="modern">मॉडर्न</string>
-    <string name="rimusic_is_multilingual_modern_powerful">RiMusic is multilingual, modern, powerful, attractive, beautiful and is translated into various languages by project collaborators.</string>
-    <string name="listen_to_your_favourite_music">Listen to your favorite music</string>
-    <string name="download_rimusic_now">Download RiMusic Now.</string>
+    <string name="rimusic_is_multilingual_modern_powerful">रीम्यूजिक बहुभाषीय, आधुनिक, शक्तिशाली, आकर्षक, सुंदर है और परियोजना सहयोगियों द्वारा विभिन्न भाषाओं में इसका अनुवाद किया गया है।</string>
+    <string name="listen_to_your_favourite_music">अपने पसंदीदा गाने सुने</string>
+    <string name="download_rimusic_now">अभी RiMusic डाउनलोड करे</string>
     <string name="repository">रिपॉजिटरी</string>
     <string name="releases">Releases</string>
     <string name="issue_tracker">Issue tracker</string>

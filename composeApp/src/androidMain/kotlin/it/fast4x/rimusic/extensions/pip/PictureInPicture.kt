@@ -7,14 +7,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.util.Log
 import android.util.Rational
-import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
@@ -25,7 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toAndroidRectF
@@ -44,9 +37,8 @@ import it.fast4x.rimusic.utils.findActivity
 import it.fast4x.rimusic.utils.isAtLeastAndroid12
 import it.fast4x.rimusic.utils.isAtLeastAndroid7
 import it.fast4x.rimusic.utils.isAtLeastAndroid8
-import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
-import me.knighthat.appContext
+import it.fast4x.rimusic.appContext
 
 
 private fun logError(throwable: Throwable) = Log.e("PipHandler", "An error occurred", throwable)
@@ -117,7 +109,7 @@ fun rememberPipHandler(key: Any = Unit): PipHandler {
 }
 
 @Immutable
-data class PipHandler internal constructor(
+data class PipHandler (
     private val enterPip: () -> Boolean?,
     private val exitPip: () -> Boolean?
 ) {

@@ -2,6 +2,7 @@ package it.fast4x.rimusic.utils
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
 import android.os.Build
 import androidx.compose.runtime.Composable
@@ -15,9 +16,8 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import timber.log.Timber
 
-@Composable
-fun TextCopyToClipboard(textCopied:String) {
-    val context = LocalContext.current
+
+fun textCopyToClipboard(textCopied:String, context: Context) {
     val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
     runCatching {
         clipboardManager.setPrimaryClip(ClipData.newPlainText("", textCopied))
@@ -31,8 +31,7 @@ fun TextCopyToClipboard(textCopied:String) {
 }
 
 @Composable
-fun textCopyFromClipboard(): String {
-    val context = LocalContext.current
+fun textCopyFromClipboard(context: Context): String {
     var textCopied by remember { mutableStateOf("") }
     val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
     runCatching {

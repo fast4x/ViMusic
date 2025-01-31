@@ -39,6 +39,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
+import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.PINNED_PREFIX
+import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
@@ -46,21 +49,17 @@ import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.items.PlaylistItem
-import it.fast4x.rimusic.PINNED_PREFIX
-import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.utils.menuStyleKey
 import it.fast4x.rimusic.utils.playlistSortByKey
 import it.fast4x.rimusic.utils.playlistSortOrderKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -76,6 +75,7 @@ fun PlaylistsItemGridMenu(
     playlist: PlaylistPreview? = null,
     modifier: Modifier = Modifier,
     onPlayNext: (() -> Unit)? = null,
+    onDeleteSongsNotInLibrary: (() -> Unit)? = null,
     onEnqueue: (() -> Unit)? = null,
     onImportOnlinePlaylist: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
@@ -154,8 +154,8 @@ fun PlaylistsItemGridMenu(
                     placeholder = stringResource(R.string.enter_the_playlist_name),
                     setValue = { text ->
                         onDismiss()
-                        transaction {
-                            val playlistId = Database.insert(Playlist(name = text))
+                        Database.asyncTransaction {
+                            val playlistId = insert(Playlist(name = text))
                             onAddToPlaylist(
                                 PlaylistPreview(
                                     Playlist(
@@ -354,6 +354,19 @@ fun PlaylistsItemGridMenu(
                     )
                 }
 
+                onDeleteSongsNotInLibrary?.let { onDeleteSongsNotInLibrary ->
+                    GridMenuItem(
+                        icon = R.drawable.trash,
+                        title = R.string.delete_songs_not_in_library,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = {
+                            onDismiss()
+                            onDeleteSongsNotInLibrary()
+                        }
+                    )
+                }
+
                 onEnqueue?.let { onEnqueue ->
                     GridMenuItem(
                         icon = R.drawable.enqueue,
@@ -399,7 +412,10 @@ fun PlaylistsItemGridMenu(
                         title = R.string.add_to_favorites,
                         colorIcon = colorPalette.text,
                         colorText = colorPalette.text,
-                        onClick = onAddToPreferites
+                        onClick = {
+                            onDismiss()
+                            onAddToPreferites()
+                        }
                     )
 
                 onAddToPlaylist?.let { onAddToPlaylist ->

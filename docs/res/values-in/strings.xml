@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="opensource_multilingual_application">Sebuah aplikasi open source dan multi-bahasa untuk memutar lagu dari YouTube Music di platform Android</string>
-    <string name="your_library">Your library.</string>
+    <string name="your_library">Perpustakaan Kamu.</string>
     <string name="organized_in_one_place">All organized in one place, favorite songs, downloaded songs, listened songs and all your playlists.</string>
     <string name="beautiful_player">Pemutar yang Indah.</string>
     <string name="listen_songs_sing_lyrics">Dengarkan lagu-lagu, menyanyi dengan lirik, atau menerjemahkan lirik dengan fitur bawaan.</string>
-    <string name="many_effects">Many effects.</string>
+    <string name="many_effects">Banyak Efek.</string>
     <string name="visualizer_preview_timeline">Visualizer, preview, timeline, play button, apply the effects you prefer..</string>
     <string name="modern">Modern.</string>
     <string name="rimusic_is_multilingual_modern_powerful">RiMusic is multilingual, modern, powerful, attractive, beautiful and is translated into various languages by project collaborators.</string>

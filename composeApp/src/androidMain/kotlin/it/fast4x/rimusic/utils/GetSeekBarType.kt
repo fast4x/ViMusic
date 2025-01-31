@@ -4,7 +4,8 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,17 +28,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.LocalPlayerServiceBinder
-import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.PauseBetweenSongs
 import it.fast4x.rimusic.enums.PlayerTimelineType
@@ -45,14 +43,15 @@ import it.fast4x.rimusic.models.ui.UiMedia
 import it.fast4x.rimusic.ui.components.ProgressPercentage
 import it.fast4x.rimusic.ui.components.SeekBar
 import it.fast4x.rimusic.ui.components.SeekBarAudioWaves
+import it.fast4x.rimusic.ui.components.SeekBarColored
 import it.fast4x.rimusic.ui.components.SeekBarCustom
 import it.fast4x.rimusic.ui.components.SeekBarThin
 import it.fast4x.rimusic.ui.components.SeekBarWaved
 import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -79,7 +78,7 @@ fun GetSeekBar(
     LaunchedEffect(mediaId) {
         if (compositionLaunched) animatedPosition.animateTo(0f)
     }
-    val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.System)
+    val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
     LaunchedEffect(position) {
         if (!isSeeking && !animatedPosition.isRunning)
             animatedPosition.animateTo(
@@ -103,7 +102,7 @@ fun GetSeekBar(
             && playerTimelineType != PlayerTimelineType.Wavy
             && playerTimelineType != PlayerTimelineType.FakeAudioBar
             && playerTimelineType != PlayerTimelineType.ThinBar
-            //&& playerTimelineType != PlayerTimelineType.ColoredBar
+            && playerTimelineType != PlayerTimelineType.ColoredBar
             )
             SeekBarCustom(
                 type = playerTimelineType,
@@ -232,22 +231,22 @@ fun GetSeekBar(
 
         if (playerTimelineType == PlayerTimelineType.FakeAudioBar)
             SeekBarAudioWaves(
-                progressPercentage = ProgressPercentage(position.toFloat() / duration.toFloat()),
+                progressPercentage = ProgressPercentage((position.toFloat() / duration.toFloat()).coerceIn(0f,1f)),
                 playedColor = colorPalette().accent,
                 notPlayedColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
                 waveInteraction = {
                     scrubbingPosition = (it.value * duration.toFloat()).toLong()
                     binder.player.seekTo(scrubbingPosition!!)
+                    scrubbingPosition = null
                 },
                 modifier = Modifier
                     .height(40.dp)
                     //.pulsatingEffect(currentValue = position.toFloat() / duration.toFloat(), isVisible = true)
             )
 
-        /*
+
         if (playerTimelineType == PlayerTimelineType.ColoredBar)
             SeekBarColored(
-                alphaType = false,
                 value = scrubbingPosition ?: position,
                 minimumValue = 0,
                 maximumValue = duration,
@@ -267,9 +266,9 @@ fun GetSeekBar(
                 },
                 color = colorPalette().collapsedPlayerProgressBar,
                 backgroundColor = colorPalette().textSecondary,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(8.dp)
             )
-         */
+
 
     }
 
@@ -294,6 +293,12 @@ fun GetSeekBar(
                 style = typography().xxs.semiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(false),
+                        onClick = {binder.player.seekTo(position - 5000)}
+                    )
             )
             BasicText(
                 text = formatAsDuration(scrubbingPosition ?: position),
@@ -407,6 +412,12 @@ fun GetSeekBar(
                     style = typography().xxs.semiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(false),
+                            onClick = {binder.player.seekTo(position + 5000)}
+                        )
                 )
                 BasicText(
                     text = formatAsDuration(duration),

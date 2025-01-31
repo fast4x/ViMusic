@@ -27,7 +27,7 @@ import it.fast4x.rimusic.utils.showDownloadedPlaylistKey
 import it.fast4x.rimusic.utils.showFavoritesPlaylistKey
 import it.fast4x.rimusic.utils.showMyTopPlaylistKey
 import it.fast4x.rimusic.utils.showOnDevicePlaylistKey
-import me.knighthat.Skeleton
+import it.fast4x.rimusic.ui.components.Skeleton
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi

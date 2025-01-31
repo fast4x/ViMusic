@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Canvas
@@ -60,7 +61,7 @@ fun SeekBarWaved(
         MutableTransitionState(false)
     }
 
-    val transition = updateTransition(transitionState = isDragging, label = null)
+    val transition = rememberTransition(transitionState = isDragging, label = null)
 
     val currentAmplitude by transition.animateDp(label = "") { if (it || !isActive) 0.dp else 2.dp }
     val currentScrubberHeight by transition.animateDp(label = "") {

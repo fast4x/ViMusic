@@ -25,7 +25,6 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlayEventsType
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -42,7 +41,7 @@ import it.fast4x.rimusic.utils.showRelatedAlbumsKey
 import it.fast4x.rimusic.utils.showSimilarArtistsKey
 import it.fast4x.rimusic.utils.showTipsKey
 import kotlinx.coroutines.flow.distinctUntilChanged
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @ExperimentalAnimationApi
 @UnstableApi
@@ -70,7 +69,7 @@ fun  QuickPicsSettings() {
         ConfirmationDialog(
             text = stringResource(R.string.do_you_really_want_to_delete_all_playback_events),
             onDismiss = { clearEvents = false },
-            onConfirm = { query(Database::clearEvents) }
+            onConfirm = { Database.asyncTransaction( Database::clearEvents ) }
         )
     }
 
@@ -99,8 +98,8 @@ fun  QuickPicsSettings() {
              */
     ) {
         HeaderWithIcon(
-            title = stringResource(R.string.quick_picks),
-            iconId = R.drawable.sparkles,
+            title = if (!isYouTubeLoggedIn()) stringResource(R.string.quick_picks) else stringResource(R.string.home),
+            iconId = if (!isYouTubeLoggedIn()) R.drawable.sparkles else R.drawable.ytmusic,
             enabled = false,
             showIcon = true,
             modifier = Modifier,

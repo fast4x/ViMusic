@@ -1,5 +1,6 @@
 package it.fast4x.innertube.utils
 
+import java.net.InetSocketAddress
 import java.net.Proxy
 
 object ProxyPreferences {
@@ -11,3 +12,14 @@ data class ProxyPreferenceItem(
     var proxyPort: Int,
     var proxyMode: Proxy.Type
 )
+
+fun getProxy(proxyPreference: ProxyPreferenceItem): Proxy {
+    return if(proxyPreference.proxyMode == Proxy.Type.DIRECT) {
+        Proxy.NO_PROXY
+    } else {
+        Proxy(
+            proxyPreference.proxyMode,
+            InetSocketAddress(proxyPreference.proxyHost, proxyPreference.proxyPort)
+        )
+    }
+}

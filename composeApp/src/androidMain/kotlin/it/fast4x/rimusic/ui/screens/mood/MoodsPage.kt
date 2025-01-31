@@ -47,8 +47,8 @@ import it.fast4x.rimusic.ui.screens.home.MoodGridItemColored
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.secondary
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalFoundationApi
 @ExperimentalAnimationApi
@@ -123,7 +123,7 @@ fun MoodsPage(
                                     } },
                                     thumbnailSizeDp = thumbnailSizeDp,
                                     modifier = Modifier
-                                        .animateItemPlacement()
+                                        .animateItem()
 
                                 )
                             }

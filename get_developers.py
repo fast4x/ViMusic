@@ -5,7 +5,10 @@ import json
         
         
 contributors: list[dict]
-
+headers = {
+    'Authorization': 'Bearer ${{ secrets.GITHUB_TOKEN }}',
+    'Accept': 'application/vnd.github.v3+json'
+}
 
 needed_keys = ['login', 'id', 'avatar_url', 'html_url', 'contributions']
 def filter_keys(entry: dict):
@@ -25,13 +28,13 @@ def fetch_contributors() -> None:
     """
     global contributors
 
-    response = requests.get(contributors_url)
+    response = requests.get(contributors_url, headers=headers)
     # Convert response from Github API to list of entries
     contributors = json.loads(response.text)
 
     # Filter out unused keys to save space
-    for entry in contributors:
-        filter_keys(entry)
+    #for entry in contributors:
+    #    filter_keys(entry)
 
 
 filename: str = 'README.md'

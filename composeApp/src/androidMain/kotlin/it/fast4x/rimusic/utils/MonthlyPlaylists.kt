@@ -18,11 +18,9 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistWithSongs
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-
 
 
 @Composable
@@ -72,11 +70,11 @@ fun CheckMonthlyPlaylist() {
 
             songsMostPlayed.let {songs ->
                         if (songs?.isNotEmpty() == true) {
-                            transaction {
-                                val playlistId = Database.insert(Playlist(name = "${MONTHLY_PREFIX}${ym}"))
+                            Database.asyncTransaction {
+                                val playlistId = insert(Playlist(name = "${MONTHLY_PREFIX}${ym}"))
                                 playlistId.let {
                                     songs.forEachIndexed{ position, song ->
-                                        Database.insert(
+                                        insert(
                                             SongPlaylistMap(
                                                 songId = song.id,
                                                 playlistId = it,
@@ -158,11 +156,11 @@ fun CreateMonthlyPlaylist() {
                 }.collectAsState(initial = null, context = Dispatchers.IO)
 
                 if (songsMostPlayed.value?.isNotEmpty() == true) {
-                    transaction {
-                        val playlistId = Database.insert(Playlist(name = "${MONTHLY_PREFIX}${ym}"))
+                    Database.asyncTransaction {
+                        val playlistId = insert(Playlist(name = "${MONTHLY_PREFIX}${ym}"))
                         playlistId.let {
                             songsMostPlayed.value!!.forEachIndexed{ position, song ->
-                                Database.insert(
+                                insert(
                                     SongPlaylistMap(
                                         songId = song.id,
                                         playlistId = it,

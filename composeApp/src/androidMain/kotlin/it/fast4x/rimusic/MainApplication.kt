@@ -49,8 +49,8 @@ class MainApplication : Application(), ImageLoaderFactory {
             .networkCachePolicy(CachePolicy.ENABLED)
             .respectCacheHeaders(false)
             .placeholder(R.drawable.loader)
-            .error(R.drawable.app_icon)
-            .fallback(R.drawable.app_icon)
+            .error(R.drawable.noimage)
+            .fallback(R.drawable.noimage)
             /*
             .memoryCachePolicy(CachePolicy.ENABLED)
             .memoryCache(

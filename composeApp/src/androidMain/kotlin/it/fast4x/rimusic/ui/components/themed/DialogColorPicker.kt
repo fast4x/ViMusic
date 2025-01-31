@@ -46,7 +46,7 @@ import androidx.core.graphics.toRect
 import it.fast4x.rimusic.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 import android.graphics.Color as AndroidColor
 
 

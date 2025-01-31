@@ -22,7 +22,7 @@ import it.fast4x.rimusic.enums.TopPlaylistPeriod
 import it.fast4x.rimusic.utils.MaxTopPlaylistItemsKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.typography
+import it.fast4x.rimusic.typography
 
 
 @Composable

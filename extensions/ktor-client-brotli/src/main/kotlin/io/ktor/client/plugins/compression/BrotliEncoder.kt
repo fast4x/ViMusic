@@ -24,3 +24,7 @@ object BrotliEncoder : ContentEncoder, Encoder by BrotliEncoder {
     }
 }
 
+fun ContentEncodingConfig.brotli(quality: Float? = null) {
+    customEncoder(BrotliEncoder, quality)
+}
+

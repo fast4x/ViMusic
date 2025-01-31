@@ -10,6 +10,7 @@
             android:targetPackage="it.fast4x.rimusic.debug"
             android:action="it.fast4x.rimusic.action.search" />
     </shortcut>
+    <!--
     <shortcut
         android:shortcutId="songs"
         android:enabled="true"
@@ -20,6 +21,7 @@
             android:targetPackage="it.fast4x.rimusic.debug"
             android:action="it.fast4x.rimusic.action.songs" />
     </shortcut>
+    -->
     <shortcut
         android:shortcutId="albums"
         android:enabled="true"
@@ -39,5 +41,15 @@
             android:targetClass="it.fast4x.rimusic.MainActivity"
             android:targetPackage="it.fast4x.rimusic.debug"
             android:action="it.fast4x.rimusic.action.library" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="crashlog"
+        android:enabled="true"
+        android:icon="@drawable/copy"
+        android:shortcutShortLabel="@string/copy_crash_log_to_clipboard">
+        <intent
+            android:targetClass="it.fast4x.rimusic.MainActivity"
+            android:targetPackage="it.fast4x.rimusic.debug"
+            android:action="it.fast4x.rimusic.action.copy_crash_log" />
     </shortcut>
 </shortcuts>
