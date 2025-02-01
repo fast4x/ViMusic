@@ -27,6 +27,7 @@ import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.ripple
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.Lifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -468,6 +470,26 @@ fun LocalPlaylistSongs(
         }
     }
 
+    var playlistDescription by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(playlistPreview?.playlist?.browseId) {
+        playlistPreview?.playlist?.browseId?.let { browseId ->
+            Innertube.playlistPage(BrowseBody(browseId = browseId))
+//                ?.completed()
+                ?.getOrNull()
+                ?.let { response ->
+                    playlistDescription = response.description
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.takeUnless { it.equals("null", ignoreCase = true) }
+//                    SmartMessage(
+//                        "Fetched playlist description: ${response.description}, title: ${response.title}, info: ${response.otherInfo}",
+//                        type = PopupType.Info,
+//                        context = context
+//                    )
+                }
+        }
+    }
+
     val thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
@@ -611,7 +633,19 @@ fun LocalPlaylistSongs(
                                     icon = painterResource(R.drawable.smart_shuffle)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(30.dp))
+                            Spacer(modifier = Modifier.height(5.dp))
+
+                            val description = playlistDescription ?: ""
+
+                            Text(
+                                text = description,
+                                color = colorPalette().text,
+                                textAlign = TextAlign.Left,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 4
+
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
                         }
 
                         Column(
