@@ -896,4 +896,5 @@
     <string name="updating_playlist_message">Update the Songs with the Missing Album ID</string>
     <string name="syncing">Syncing...</string>
     <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="playlist_description">playlist description</string>
 </resources>

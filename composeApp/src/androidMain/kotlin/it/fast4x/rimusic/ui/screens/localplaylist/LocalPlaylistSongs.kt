@@ -91,7 +91,9 @@ import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.NextBody
+import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.requests.relatedSongs
 import it.fast4x.innertube.utils.completed
 import it.fast4x.rimusic.Database
@@ -181,6 +183,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.PlaylistSongsTypeFilter
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
@@ -202,6 +205,7 @@ import it.fast4x.rimusic.utils.getAlbumVersionFromVideo
 import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
+import it.fast4x.rimusic.utils.showPlaylistDescriptionEnabledKey
 import it.fast4x.rimusic.utils.updateLocalPlaylist
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -234,6 +238,7 @@ fun LocalPlaylistSongs(
     var playlistSongsSortByPosition by persistList<SongEntity>("localPlaylist/$playlistId/songs")
     var playlistPreview by persist<PlaylistPreview?>("localPlaylist/playlist")
     val thumbnailUrl = remember { mutableStateOf("") }
+    val isPlaylistDescriptionEnabled = rememberPreference(showPlaylistDescriptionEnabledKey,true)
 
 
     var sortBy by rememberPreference(playlistSongSortByKey, PlaylistSongSortBy.Title)
@@ -1093,15 +1098,17 @@ fun LocalPlaylistSongs(
                         }
                         Spacer(modifier = Modifier.height(5.dp))
 
-                        val description = playlistDescription ?: ""
+                        if (isPlaylistDescriptionEnabled.value) {
+                            val description = playlistDescription ?: ""
 
-                         Text(
-                             text = description,
-                             color = colorPalette().text,
-                             textAlign = TextAlign.Left,
-                             overflow = TextOverflow.Ellipsis,
-                             maxLines = 4
+                            Text(
+                                text = description,
+                                color = colorPalette().text,
+                                textAlign = TextAlign.Left,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 4
                             )
+                        }
                          Spacer(modifier = Modifier.height(10.dp))
                     }
 
