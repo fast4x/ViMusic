@@ -331,6 +331,7 @@ object Innertube {
         val info: Info<NavigationEndpoint.Endpoint.Browse>?,
         val channel: Info<NavigationEndpoint.Endpoint.Browse>?,
         val songCount: Int?,
+        val isEditable: Boolean?,
         override val thumbnail: Thumbnail?
     ) : Item() {
         override val key get() = info!!.endpoint!!.browseId!!

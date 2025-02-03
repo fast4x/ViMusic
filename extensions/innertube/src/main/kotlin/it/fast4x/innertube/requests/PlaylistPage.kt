@@ -22,9 +22,11 @@ import it.fast4x.innertube.utils.runCatchingNonCancellable
 
 data class PlaylistPage(
     val playlist: Innertube.PlaylistItem,
+    val description: String?,
     var songs: List<Innertube.SongItem>,
     val songsContinuation: String?,
     val continuation: String?,
+    val isEditable: Boolean? = false,
 ) {
     companion object {
         fun fromMusicResponsiveListItemRenderer(renderer: MusicResponsiveListItemRenderer): Innertube.SongItem {

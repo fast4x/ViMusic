@@ -586,7 +586,7 @@ fun BaseMediaItemMenu(
 
             if(isYouTubeSyncEnabled())
                 CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
 
             if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
@@ -595,7 +595,7 @@ fun BaseMediaItemMenu(
                     context = context,
                     coroutineScope = coroutineScope,
                     pipedSession = pipedSession.toApiSession(),
-                    id = UUID.fromString(playlist.browseId),
+                    id = UUID.fromString(cleanPrefix(playlist.browseId ?: "")),
                     videos = listOf(mediaItem.mediaId)
                 )
             }
@@ -673,7 +673,7 @@ fun MiniMediaItemMenu(
 
             if(isYouTubeSyncEnabled())
                 CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
 
             onDismiss()

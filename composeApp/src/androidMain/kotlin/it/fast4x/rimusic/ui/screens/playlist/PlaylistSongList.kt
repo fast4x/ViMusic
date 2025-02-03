@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -80,7 +81,10 @@ import it.fast4x.rimusic.Database.Companion.like
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PopupType
@@ -141,9 +145,16 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.align
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.getHttpClient
+import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.setLikeState
 import kotlinx.coroutines.flow.filterNotNull
+import me.bush.translator.Language
+import me.bush.translator.Translator
 import timber.log.Timber
+import java.io.File
 
 
 @ExperimentalTextApi
@@ -177,6 +188,17 @@ fun PlaylistSongList(
         }
     var saveCheck by remember { mutableStateOf(false) }
     var isSavedInYoutube by remember { mutableStateOf(false) }
+
+    val sectionTextModifier = Modifier
+        .padding(horizontal = 16.dp)
+        .padding(top = 24.dp, bottom = 8.dp)
+
+    var translateEnabled by remember {
+        mutableStateOf(false)
+    }
+
+    val translator = Translator(getHttpClient())
+    val languageDestination = languageDestination()
 
     LaunchedEffect(saveCheck) {
         Database.asyncTransaction {
@@ -270,7 +292,7 @@ fun PlaylistSongList(
             placeholder = "https://........",
             setValue = { text ->
                 Database.asyncTransaction {
-                    val playlistId = insert(Playlist(name = text, browseId = browseId))
+                    val playlistId = insert(Playlist(name = text, browseId = if (playlistPage?.isEditable == true) "$YTEDITABLEPLAYLIST_PREFIX${browseId}" else browseId))
 
                     playlistPage?.songs
                                 ?.map(Innertube.SongItem::asMediaItem)
@@ -306,7 +328,7 @@ fun PlaylistSongList(
                 //.fillMaxSize()
                 .fillMaxHeight()
                 .fillMaxWidth(
-                    if( NavigationBarPosition.Right.isCurrent() )
+                    if (NavigationBarPosition.Right.isCurrent())
                         Dimensions.contentWidthRightBar
                     else
                         1f
@@ -325,7 +347,9 @@ fun PlaylistSongList(
                     key = "header"
                 ) {
 
-                    val modifierArt = if (isLandscape) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().aspectRatio(4f / 3)
+                    val modifierArt = if (isLandscape) Modifier.fillMaxWidth() else Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(4f / 3)
 
                     Box(
                         modifier = modifierArt
@@ -380,7 +404,7 @@ fun PlaylistSongList(
                                 iconSize = 24.dp,
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
-                                    .padding(top = 5.dp, end= 5.dp),
+                                    .padding(top = 5.dp, end = 5.dp),
                                 onClick = {
                                     (playlistPage?.playlist?.thumbnail?.url ?: "https://music.youtube.com/playlist?list=${browseId.removePrefix("VL")}").let { url ->
                                         val sendIntent = Intent().apply {
@@ -452,23 +476,31 @@ fun PlaylistSongList(
                                             if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true) {
                                                 downloadState = Download.STATE_DOWNLOADING
                                                 if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true)
-                                                    playlistPage?.songs?.filter{ it.asMediaItem.mediaId !in dislikedSongs }?.forEach {
-                                                        binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                        CoroutineScope(Dispatchers.IO).launch {
-                                                            Database.deleteFormat(it.asMediaItem.mediaId)
-                                                        }
-                                                        manageDownload(
-                                                            context = context,
-                                                            mediaItem = it.asMediaItem,
-                                                            downloadState = false
-                                                        )
-                                                    } else {
-                                                SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                    playlistPage?.songs?.filter { it.asMediaItem.mediaId !in dislikedSongs }
+                                                        ?.forEach {
+                                                            binder?.cache?.removeResource(it.asMediaItem.mediaId)
+                                                            CoroutineScope(Dispatchers.IO).launch {
+                                                                Database.deleteFormat(it.asMediaItem.mediaId)
+                                                            }
+                                                            manageDownload(
+                                                                context = context,
+                                                                mediaItem = it.asMediaItem,
+                                                                downloadState = false
+                                                            )
+                                                        } else {
+                                                    SmartMessage(
+                                                        context.resources.getString(R.string.disliked_this_collection),
+                                                        type = PopupType.Error,
+                                                        context = context
+                                                    )
+                                                }
                                             }
-                                        }
-                                            },
+                                        },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_download_all_songs), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_download_all_songs),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -504,7 +536,10 @@ fun PlaylistSongList(
                                             }
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_remove_all_downloaded_songs), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_remove_all_downloaded_songs),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -527,11 +562,18 @@ fun PlaylistSongList(
                                                         binder?.player?.enqueue(mediaItems, context)
                                                     }
                                             } else {
-                                                SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                SmartMessage(
+                                                    context.resources.getString(R.string.disliked_this_collection),
+                                                    type = PopupType.Error,
+                                                    context = context
+                                                )
                                             }
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_enqueue_songs), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_enqueue_songs),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -547,18 +589,27 @@ fun PlaylistSongList(
                                         onClick = {
                                             if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true) {
                                                 binder?.stopRadio()
-                                                playlistPage?.songs?.filter{ it.asMediaItem.mediaId !in dislikedSongs }?.shuffled()?.map(Innertube.SongItem::asMediaItem)
+                                                playlistPage?.songs?.filter { it.asMediaItem.mediaId !in dislikedSongs }
+                                                    ?.shuffled()
+                                                    ?.map(Innertube.SongItem::asMediaItem)
                                                     ?.let {
                                                         binder?.player?.forcePlayFromBeginning(
                                                             it
                                                         )
                                                     }
                                             } else {
-                                                SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                SmartMessage(
+                                                    context.resources.getString(R.string.disliked_this_collection),
+                                                    type = PopupType.Error,
+                                                    context = context
+                                                )
                                             }
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_shuffle), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_shuffle),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -576,17 +627,26 @@ fun PlaylistSongList(
                                                 if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true) {
                                                     binder.stopRadio()
                                                     binder.playRadio(
-                                                      NavigationEndpoint.Endpoint.Watch( videoId = 
-                                                          if (binder.player.currentMediaItem?.mediaId != null)
-                                                              binder.player.currentMediaItem?.mediaId
-                                                          else playlistPage?.songs?.first { it.asMediaItem.mediaId !in dislikedSongs }?.asMediaItem?.mediaId))
+                                                        NavigationEndpoint.Endpoint.Watch(videoId =
+                                                        if (binder.player.currentMediaItem?.mediaId != null)
+                                                            binder.player.currentMediaItem?.mediaId
+                                                        else playlistPage?.songs?.first { it.asMediaItem.mediaId !in dislikedSongs }?.asMediaItem?.mediaId
+                                                        )
+                                                    )
                                                 } else {
-                                                    SmartMessage(context.resources.getString(R.string.disliked_this_collection),type = PopupType.Error, context = context)
+                                                    SmartMessage(
+                                                        context.resources.getString(R.string.disliked_this_collection),
+                                                        type = PopupType.Error,
+                                                        context = context
+                                                    )
                                                 }
                                             }
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_start_radio), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_start_radio),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -612,7 +672,8 @@ fun PlaylistSongList(
                                                     onAddToPlaylist = { playlistPreview ->
                                                         position =
                                                             playlistPreview.songCount.minus(1) ?: 0
-                                                        if (position > 0) position++ else position = 0
+                                                        if (position > 0) position++ else position =
+                                                            0
 
                                                         playlistPage!!.songs.forEachIndexed { index, song ->
                                                             runCatching {
@@ -630,13 +691,24 @@ fun PlaylistSongList(
                                                                 Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
                                                             }
 
-                                                            if(isYouTubeSyncEnabled())
+                                                            if (isYouTubeSyncEnabled())
                                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                                    playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                                    playlistPreview.playlist.browseId?.let {
+                                                                        YtMusic.addToPlaylist(
+                                                                            cleanPrefix(it),
+                                                                            song.asMediaItem.mediaId
+                                                                        )
+                                                                    }
                                                                 }
                                                         }
                                                         CoroutineScope(Dispatchers.Main).launch {
-                                                            SmartMessage(context.resources.getString(R.string.done), type = PopupType.Success, context = context)
+                                                            SmartMessage(
+                                                                context.resources.getString(
+                                                                    R.string.done
+                                                                ),
+                                                                type = PopupType.Success,
+                                                                context = context
+                                                            )
                                                         }
                                                     },
 
@@ -648,7 +720,10 @@ fun PlaylistSongList(
                                             }
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.info_add_in_playlist), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_add_in_playlist),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -661,17 +736,27 @@ fun PlaylistSongList(
                                     .padding(horizontal = 5.dp)
                                     .combinedClickable(
                                         onClick = {
-                                            playlistPage!!.songs?.forEachIndexed { _, song ->
+                                            playlistPage!!.songs.forEachIndexed { _, song ->
                                                 Database.asyncTransaction {
-                                                    if ( like( song.asMediaItem.mediaId, setLikeState(song.asSong.likedAt) ) == 0 ) {
+                                                    if (like(
+                                                            song.asMediaItem.mediaId,
+                                                            setLikeState(song.asSong.likedAt)
+                                                        ) == 0
+                                                    ) {
                                                         insert(song.asMediaItem, Song::toggleLike)
                                                     }
                                                 }
                                             }
-                                            SmartMessage(context.resources.getString(R.string.done), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.done),
+                                                context = context
+                                            )
                                         },
                                         onLongClick = {
-                                            SmartMessage(context.resources.getString(R.string.add_to_favorites), context = context)
+                                            SmartMessage(
+                                                context.resources.getString(R.string.add_to_favorites),
+                                                context = context
+                                            )
                                         }
                                     )
                             )
@@ -686,18 +771,35 @@ fun PlaylistSongList(
                                             onClick = {
                                                 if (playlistNameInDatabase.contains(YTP_PREFIX)) {
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        YtMusic.removelikePlaylistOrAlbum(browseId.substringAfter("VL"))
+                                                        YtMusic.removelikePlaylistOrAlbum(
+                                                            browseId.substringAfter(
+                                                                "VL"
+                                                            )
+                                                        )
                                                     }
                                                     Database.asyncTransaction {
-                                                        Database.playlistWithBrowseId(browseId.substringAfter("VL"))
+                                                        Database.playlistWithBrowseId(
+                                                            browseId.substringAfter(
+                                                                "VL"
+                                                            )
+                                                        )
                                                             ?.let { delete(it) }
                                                     }
                                                 } else {
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        YtMusic.likePlaylistOrAlbum(browseId.substringAfter("VL"))
+                                                        YtMusic.likePlaylistOrAlbum(
+                                                            browseId.substringAfter(
+                                                                "VL"
+                                                            )
+                                                        )
                                                     }
                                                     Database.asyncTransaction {
-                                                        val playlistId = insert(Playlist(name = (YTP_PREFIX + playlistPage?.playlist?.title) , browseId = browseId.substringAfter("VL")))
+                                                        val playlistId = insert(
+                                                            Playlist(
+                                                                name = (YTP_PREFIX + playlistPage?.playlist?.title),
+                                                                browseId = browseId.substringAfter("VL")
+                                                            )
+                                                        )
 
                                                         playlistPage?.songs
                                                             ?.map(Innertube.SongItem::asMediaItem)
@@ -840,6 +942,122 @@ fun PlaylistSongList(
                                     }
                             )
                         }
+                    }
+                }
+
+                playlistPage?.description?.let { description ->
+                    item(
+                        key = "playlistInfo"
+                    ) {
+
+                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
+
+                        BasicText(
+                            text = stringResource(R.string.information),
+                            style = typography().m.semiBold.align(TextAlign.Start),
+                            modifier = sectionTextModifier
+                                .fillMaxWidth()
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                //.padding(top = 16.dp)
+                                .padding(vertical = 16.dp, horizontal = 8.dp)
+                            //.padding(endPaddingValues)
+                            //.padding(end = Dimensions.bottomSpacer)
+                        ) {
+                            IconButton(
+                                icon = R.drawable.translate,
+                                color = if (translateEnabled == true) colorPalette()
+                                    .text else colorPalette()
+                                    .textDisabled,
+                                enabled = true,
+                                onClick = {},
+                                modifier = Modifier
+                                    .padding(all = 8.dp)
+                                    .size(18.dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            translateEnabled = !translateEnabled
+                                        },
+                                        onLongClick = {
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_translation),
+                                                context = context
+                                            )
+                                        }
+                                    )
+                            )
+                            BasicText(
+                                text = "“",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = (-8).dp)
+                                    .align(Alignment.Top)
+                            )
+
+                            var translatedText by remember { mutableStateOf("") }
+                            val nonTranslatedText by remember {
+                                mutableStateOf(
+                                    if (attributionsIndex == -1) {
+                                        description
+                                    } else {
+                                        description.substring(0, attributionsIndex)
+                                    }
+                                )
+                            }
+
+
+                            if (translateEnabled == true) {
+                                LaunchedEffect(Unit) {
+                                    val result = withContext(Dispatchers.IO) {
+                                        try {
+                                            translator.translate(
+                                                nonTranslatedText,
+                                                languageDestination,
+                                                Language.AUTO
+                                            ).translatedText
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                    translatedText =
+                                        if (result.toString() == "kotlin.Unit") "" else result.toString()
+                                }
+                            } else translatedText = nonTranslatedText
+
+                            BasicText(
+                                text = translatedText,
+                                style = typography().xxs.secondary.align(TextAlign.Justify),
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f)
+                            )
+
+                            BasicText(
+                                text = "„",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = 4.dp)
+                                    .align(Alignment.Bottom)
+                            )
+                        }
+
+                        if (attributionsIndex != -1) {
+                            BasicText(
+                                text = stringResource(R.string.from_wikipedia_cca),
+                                style = typography().xxs.color(
+                                    colorPalette()
+                                        .textDisabled).align(
+                                    TextAlign.Start
+                                ),
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
+                                //.padding(endPaddingValues)
+                            )
+                        }
+
                     }
                 }
 

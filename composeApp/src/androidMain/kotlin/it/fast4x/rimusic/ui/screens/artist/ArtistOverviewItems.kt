@@ -67,6 +67,7 @@ import it.fast4x.innertube.requests.ArtistItemsPage
 import it.fast4x.innertube.requests.ArtistPage
 import it.fast4x.innertube.requests.ArtistSection
 import it.fast4x.innertube.requests.itemsPage
+import it.fast4x.innertube.utils.completed
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
@@ -207,9 +208,9 @@ fun ArtistOverviewItems(
                 browseId = browseId,
                 params = params
             )
-        ).getOrNull()
+        ).completed().getOrNull()
 
-        println("ArtistOverviewItems artistItemsPage: $artistItemsPage")
+        println("ArtistOverviewItems artistItemsPage size: ${artistItemsPage?.items}")
     }
 
     if (artistItemsPage == null) return
@@ -246,7 +247,10 @@ fun ArtistOverviewItems(
                             .padding(horizontal = 16.dp)
                     )
                 }
-                items(artistItemsPage?.items!!.distinctBy { it.key }) { item ->
+                items(artistItemsPage?.items!!) { item ->
+
+                    println("ArtistOverviewItems item: ${item}")
+
                     when (item) {
                         is Innertube.SongItem -> {
                             if (parentalControlEnabled && item.explicit) return@items

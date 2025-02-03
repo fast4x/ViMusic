@@ -60,6 +60,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SortOrder
@@ -186,7 +187,7 @@ fun BaseMediaItemGridMenu(
             }
             if(isYouTubeSyncEnabled())
                 CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
         },
         onHideFromDatabase = onHideFromDatabase,
@@ -257,7 +258,7 @@ fun MiniMediaItemGridMenu(
 
             if(isYouTubeSyncEnabled())
                 CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
 
             onDismiss()

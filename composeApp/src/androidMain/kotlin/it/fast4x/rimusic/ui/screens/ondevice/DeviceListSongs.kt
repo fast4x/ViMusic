@@ -78,6 +78,7 @@ import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.DeviceLists
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
@@ -714,7 +715,8 @@ fun DeviceListSongs(
                                                 }
                                                 if(isYouTubeSyncEnabled())
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                        playlistPreview.playlist.browseId?.let {
+                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.asMediaItem.mediaId) }
                                                     }
                                             }
                                         } else {
@@ -732,7 +734,8 @@ fun DeviceListSongs(
                                                 }
                                                 if(isYouTubeSyncEnabled())
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.mediaId) }
+                                                        playlistPreview.playlist.browseId?.let {
+                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.mediaId) }
                                                     }
                                             }
                                             listMediaItems.clear()

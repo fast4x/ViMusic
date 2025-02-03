@@ -86,6 +86,7 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.CacheType
@@ -1385,7 +1386,8 @@ fun HomeSongsModern(
                                                 if(isYouTubeSyncEnabled() && !song.song.id.startsWith(
                                                         LOCAL_KEY_PREFIX))
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.song.asMediaItem.mediaId) }
+                                                        playlistPreview.playlist.browseId?.let {
+                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.song.asMediaItem.mediaId) }
                                                     }
                                             }
                                             CoroutineScope(Dispatchers.Main).launch {

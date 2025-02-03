@@ -48,6 +48,7 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.AlbumsType
 import it.fast4x.rimusic.enums.NavigationBarPosition
@@ -448,7 +449,8 @@ fun HomeAlbums(
 
                                                     if(isYouTubeSyncEnabled())
                                                         CoroutineScope(Dispatchers.IO).launch {
-                                                            playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.id) }
+                                                            playlistPreview.playlist.browseId?.let { it ->
+                                                                YtMusic.addToPlaylist(cleanPrefix(it), song.id) }
                                                         }
 
                                                     }

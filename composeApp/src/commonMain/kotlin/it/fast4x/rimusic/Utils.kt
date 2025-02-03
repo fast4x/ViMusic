@@ -10,19 +10,18 @@ const val PIPED_PREFIX = "piped:"
 const val EXPLICIT_PREFIX = "e:"
 const val LOCAL_KEY_PREFIX = "local:"
 const val YTP_PREFIX = "account:"
+const val YTEDITABLEPLAYLIST_PREFIX = "editable:"
 
 fun cleanPrefix(text: String): String {
     val cleanText = text.replace(PINNED_PREFIX, "", true)
         .replace(MONTHLY_PREFIX, "", true)
         .replace(PIPED_PREFIX, "", true)
+        .replace(YTEDITABLEPLAYLIST_PREFIX, "", true)
         .replace(EXPLICIT_PREFIX, "", true)
         .replace(MODIFIED_PREFIX, "", true)
         .replace(YTP_PREFIX, "", true)
-//    var cleanText = text.substringAfter(PINNED_PREFIX)
-//    cleanText = cleanText.substringAfter(MONTHLY_PREFIX)
-//    cleanText = cleanText.substringAfter(PIPED_PREFIX)
-//    cleanText = cleanText.substringAfter(EXPLICIT_PREFIX)
-//    cleanText = cleanText.substringAfter(MODIFIED_PREFIX)
+
+
     return cleanText
 }
 
