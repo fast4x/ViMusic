@@ -178,6 +178,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.context
 import it.fast4x.rimusic.enums.PlaylistSongsTypeFilter
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
@@ -1459,6 +1460,7 @@ fun LocalPlaylistSongs(
                                             }
                                         },
                                         showOnSyncronize = !playlistPreview.playlist.browseId.isNullOrBlank(),
+                                        showLinkUnlink = isNetworkConnected(context()) && playlistPreview.playlist.name.contains(YTP_PREFIX),
                                         /*
                                         onSyncronize = {
                                             if (!playlistPreview.playlist.name.startsWith(
@@ -1513,6 +1515,25 @@ fun LocalPlaylistSongs(
                                         },
                                         */
                                         onSyncronize = {sync();SmartMessage(context.resources.getString(R.string.done), context = context) },
+                                        onLinkUnlink = {
+                                            if (!isNetworkConnected(context)){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                            } else if (playlistPreview.playlist.name.contains(YTP_PREFIX)){
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    if (playlistPreview.playlist.browseId?.startsWith("editable:") == true) {
+                                                        playlistPreview.playlist.browseId.let {YtMusic.deletePlaylist(it.substringAfter("editable:") ?: "")}
+                                                    } else {
+                                                        playlistPreview.playlist.browseId.let {YtMusic.removelikePlaylistOrAlbum(it?.substringAfter("editable:") ?: "")}
+                                                    }
+                                                    Database.update(
+                                                        playlistPreview.playlist.copy(
+                                                            name = (playlistPreview.playlist.name).replace(YTP_PREFIX,""),
+                                                            browseId = null
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        },
                                         onRename = {
                                             //if (playlistPreview.playlist.browseId == null || playlistNotMonthlyType || playlistNotPipedType)
                                             if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true){
@@ -1613,7 +1634,7 @@ fun LocalPlaylistSongs(
                                                 SmartMessage(context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist), context = context)
                                         },
                                         onDelete = {
-                                            if (!isNetworkConnected(context) && playlistPreview.playlist.name.contains(YTP_PREFIX)){
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.name.contains(YTP_PREFIX) && isYouTubeSyncEnabled()){
                                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context)
                                             } else isDeleting = true
                                         },

@@ -81,6 +81,7 @@ fun PlaylistsItemMenu(
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
     showOnSyncronize: Boolean = false,
+    showLinkUnlink: Boolean = false,
     onSyncronize: (() -> Unit)? = null,
     onRenumberPositions: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -93,6 +94,7 @@ fun PlaylistsItemMenu(
     onEditThumbnail: (() -> Unit)? = null,
     onResetThumbnail: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
+    onLinkUnlink: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     var isViewingPlaylists by remember {
@@ -122,7 +124,9 @@ fun PlaylistsItemMenu(
             onAddToPlaylist = onAddToPlaylist,
             onAddToPreferites = onAddToPreferites,
             showOnSyncronize = showOnSyncronize,
+            showLinkUnlink = showLinkUnlink,
             onSyncronize = onSyncronize,
+            onLinkUnlink = onLinkUnlink,
             onRenumberPositions = onRenumberPositions,
             onDelete = onDelete,
             onRename = onRename,
@@ -471,6 +475,17 @@ fun PlaylistsItemMenu(
                             onClick = {
                                 onDismiss()
                                 onSyncronize()
+                            }
+                        )
+                    }
+
+                    if (showLinkUnlink) onLinkUnlink?.let { onLinkUnlink ->
+                        MenuEntry(
+                            icon = R.drawable.link,
+                            text = stringResource(R.string.unlink_from_ytm),
+                            onClick = {
+                                onDismiss()
+                                onLinkUnlink()
                             }
                         )
                     }

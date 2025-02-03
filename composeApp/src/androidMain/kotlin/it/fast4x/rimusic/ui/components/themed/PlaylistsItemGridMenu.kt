@@ -81,6 +81,7 @@ fun PlaylistsItemGridMenu(
     onAddToPreferites: (() -> Unit)? = null,
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
     showOnSyncronize: Boolean = false,
+    showLinkUnlink: Boolean = false,
     onSyncronize: (() -> Unit)? = null,
     onRenumberPositions: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -93,6 +94,7 @@ fun PlaylistsItemGridMenu(
     onEditThumbnail: (() -> Unit)? = null,
     onResetThumbnail: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
+    onLinkUnlink: (() -> Unit)? = null,
     disableScrollingText: Boolean
     ) {
     var isViewingPlaylists by remember {
@@ -389,6 +391,19 @@ fun PlaylistsItemGridMenu(
                         onClick = {
                             onDismiss()
                             onSyncronize()
+                        }
+                    )
+                }
+
+                if (showLinkUnlink) onLinkUnlink?.let { onLinkUnlink ->
+                    GridMenuItem(
+                        icon = R.drawable.link,
+                        title = R.string.unlink_from_ytm,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = {
+                            onDismiss()
+                            onLinkUnlink()
                         }
                     )
                 }
