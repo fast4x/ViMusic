@@ -754,12 +754,15 @@ fun AlbumDetails(
                                                 songs.map { it.asMediaItem })
                                         }
 
-                                        if (isYouTubeSyncEnabled())
+                                        if (isYouTubeSyncEnabled()) {
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 if (bookmarkedAt == null)
                                                     albumPage?.album?.playlistId.let {
                                                         if (it != null) {
                                                             YtMusic.removelikePlaylistOrAlbum(it)
+                                                            Database.asyncTransaction {
+                                                                updateAlbumTitle(browseId,(album?.title ?: "").replace(YTP_PREFIX, "", true))
+                                                            }
                                                         }
                                                     }
                                                 else
@@ -774,6 +777,7 @@ fun AlbumDetails(
                                                         }
                                                     }
                                             }
+                                        }
                                     },
                                     onLongClick = {
                                         SmartMessage(

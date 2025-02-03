@@ -347,6 +347,9 @@ fun ArtistOverviewModern(
                                             artistPage.artist.channelId.let {
                                                 if (it != null) {
                                                     YtMusic.unsubscribeChannel(it)
+                                                    if (artist != null && browseId != null) {
+                                                        Database.updateArtistName(browseId, (artist?.name ?: "").replace(YTP_PREFIX, "", true))
+                                                    }
                                                 }
                                             }
                                         else
