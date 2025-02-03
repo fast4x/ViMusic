@@ -1613,7 +1613,7 @@ fun LocalPlaylistSongs(
                                                 SmartMessage(context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist), context = context)
                                         },
                                         onDelete = {
-                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true){
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.name.contains(YTP_PREFIX)){
                                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context)
                                             } else isDeleting = true
                                         },
