@@ -902,4 +902,5 @@
     <string name="ytm_library">YTM Library</string>
     <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
     <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
 </resources>

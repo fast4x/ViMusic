@@ -739,43 +739,51 @@ fun AlbumDetails(
                                 .padding(horizontal = 25.dp)
                                 .combinedClickable(
                                     onClick = {
-                                        val bookmarkedAt =
-                                            if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
+                                        if (isYouTubeSyncEnabled() && !isNetworkConnected(context)){
+                                            SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                        } else {
+                                            val bookmarkedAt =
+                                                if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                        Database.asyncTransaction {
-                                            album
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(::update)
-                                        }
+                                            Database.asyncTransaction {
+                                                album
+                                                    ?.copy(bookmarkedAt = bookmarkedAt)
+                                                    ?.let(::update)
+                                            }
 
-                                        if (bookmarkedAt != null) {
-                                            MyDownloadHelper.autoDownloadWhenAlbumBookmarked(
-                                                context,
-                                                songs.map { it.asMediaItem })
-                                        }
+                                            if (bookmarkedAt != null) {
+                                                MyDownloadHelper.autoDownloadWhenAlbumBookmarked(
+                                                    context,
+                                                    songs.map { it.asMediaItem })
+                                            }
 
-                                        if (isYouTubeSyncEnabled()) {
-                                            CoroutineScope(Dispatchers.IO).launch {
-                                                if (bookmarkedAt == null)
-                                                    albumPage?.album?.playlistId.let {
-                                                        if (it != null) {
-                                                            YtMusic.removelikePlaylistOrAlbum(it)
-                                                            Database.asyncTransaction {
-                                                                updateAlbumTitle(browseId,(album?.title ?: "").replace(YTP_PREFIX, "", true))
-                                                            }
-                                                        }
-                                                    }
-                                                else
-                                                    albumPage?.album?.playlistId.let {
-                                                        if (it != null) {
-                                                            YtMusic.likePlaylistOrAlbum(it)
-                                                            if (album != null) {
+                                            if (isYouTubeSyncEnabled()) {
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    if (bookmarkedAt == null)
+                                                        albumPage?.album?.playlistId.let {
+                                                            if (it != null) {
+                                                                YtMusic.removelikePlaylistOrAlbum(it)
                                                                 Database.asyncTransaction {
-                                                                    updateAlbumTitle(browseId, YTP_PREFIX + album?.title)
+                                                                    updateAlbumTitle(browseId,(album?.title?: "").replace(YTP_PREFIX,"",true)
+                                                                    )
                                                                 }
                                                             }
                                                         }
-                                                    }
+                                                    else
+                                                        albumPage?.album?.playlistId.let {
+                                                            if (it != null) {
+                                                                YtMusic.likePlaylistOrAlbum(it)
+                                                                if (album != null) {
+                                                                    Database.asyncTransaction {
+                                                                        updateAlbumTitle(
+                                                                            browseId,
+                                                                            YTP_PREFIX + album?.title
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                }
                                             }
                                         }
                                     },

@@ -43,7 +43,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -122,6 +124,7 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.isNetworkConnected
 import timber.log.Timber
 import java.time.LocalTime.now
 import java.time.format.DateTimeFormatter
@@ -183,7 +186,9 @@ fun InPlaylistMediaItemMenu(
         mediaItem = song.asMediaItem,
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
-            if ((playlist?.playlist?.browseId == null)
+            if (!isNetworkConnected(context) && playlist?.playlist?.browseId?.startsWith("editable:") == true){
+                SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+            } else if ((playlist?.playlist?.browseId == null)
                 || playlist.playlist.browseId.startsWith("editable:")
                 || !(playlist.playlist.name.contains(YTP_PREFIX))) {
                 Database.asyncTransaction {deleteSongFromPlaylist(song.id, playlistId)}
@@ -936,9 +941,11 @@ fun MediaItemMenu(
 
             val pinnedPlaylists = playlistPreviews.filter {
                 it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
+                        && if (isNetworkConnected(context())) !(it.playlist.name.contains(YTP_PREFIX) && (it.playlist.browseId?.startsWith("editable:") == false)) else !it.playlist.name.contains(YTP_PREFIX)
             }
 
-            val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true }
+            val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true
+                    && !it.playlist.name.startsWith(PINNED_PREFIX)}
 
             val unpinnedPlaylists = playlistPreviews.filter {
                 !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
@@ -1017,13 +1024,32 @@ fun MediaItemMenu(
                         pinnedPlaylists.forEach { playlistPreview ->
                             MenuEntry(
                                 icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
-                                text = playlistPreview.playlist.name.substringAfter(PINNED_PREFIX),
+                                text = cleanPrefix(playlistPreview.playlist.name),
                                 secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
                                 onClick = {
                                     onDismiss()
                                     onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
                                 },
                                 trailingContent = {
+                                    if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))
+                                        Image(
+                                            painter = painterResource(R.drawable.piped_logo),
+                                            contentDescription = null,
+                                            colorFilter = ColorFilter.tint(colorPalette().red),
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                        )
+                                    if (playlistPreview.playlist.name.contains(YTP_PREFIX)) {
+                                        Image(
+                                            painter = painterResource(R.drawable.ytmusic),
+                                            contentDescription = null,
+                                            colorFilter = ColorFilter.tint(
+                                                Color.Red.copy(0.75f).compositeOver(Color.White)
+                                            ),
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                        )
+                                    }
                                     IconButton(
                                         icon = R.drawable.open,
                                         color = colorPalette().text,
@@ -1043,7 +1069,7 @@ fun MediaItemMenu(
                     }
                 }
 
-                if (youtubePlaylists.isNotEmpty()) {
+                if (youtubePlaylists.isNotEmpty() && isNetworkConnected(context())) {
                     BasicText(
                         text = stringResource(R.string.ytm_playlists),
                         style = typography().m.semiBold,
@@ -1754,6 +1780,7 @@ fun AddToPlaylistItemMenu(
     mediaItem: MediaItem,
     onGoToPlaylist: ((Long) -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     var isCreatingNewPlaylist by rememberSaveable {
         mutableStateOf(false)
     }
@@ -1785,9 +1812,11 @@ fun AddToPlaylistItemMenu(
 
     val pinnedPlaylists = playlistPreviews.filter {
         it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
+                && if (isNetworkConnected(context())) !(it.playlist.name.contains(YTP_PREFIX) && (it.playlist.browseId?.startsWith("editable:") == false)) else !it.playlist.name.contains(YTP_PREFIX)
     }
 
-    val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true }
+    val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true
+            && !it.playlist.name.startsWith(PINNED_PREFIX)}
 
     val unpinnedPlaylists = playlistPreviews.filter {
         !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
@@ -1833,7 +1862,7 @@ fun AddToPlaylistItemMenu(
                 pinnedPlaylists.forEach { playlistPreview ->
                     MenuEntry(
                         icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
-                        text = playlistPreview.playlist.name.substringAfter(PINNED_PREFIX),
+                        text = cleanPrefix(playlistPreview.playlist.name),
                         secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
                         onClick = {
                             if (playlistIds.contains(playlistPreview.playlist.id)){
@@ -1841,6 +1870,25 @@ fun AddToPlaylistItemMenu(
                             } else onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
                         },
                         trailingContent = {
+                            if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))
+                                Image(
+                                    painter = painterResource(R.drawable.piped_logo),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(colorPalette().red),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                )
+                            if (playlistPreview.playlist.name.contains(YTP_PREFIX)) {
+                                Image(
+                                    painter = painterResource(R.drawable.ytmusic),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(
+                                        Color.Red.copy(0.75f).compositeOver(Color.White)
+                                    ),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                )
+                            }
                             IconButton(
                                 icon = R.drawable.open,
                                 color = colorPalette().text,
@@ -1860,7 +1908,7 @@ fun AddToPlaylistItemMenu(
             }
         }
 
-        if (youtubePlaylists.isNotEmpty()) {
+        if (youtubePlaylists.isNotEmpty() && isNetworkConnected(context)) {
             BasicText(
                 text = stringResource(R.string.ytm_playlists),
                 style = typography().m.semiBold,

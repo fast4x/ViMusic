@@ -197,6 +197,7 @@ import it.fast4x.rimusic.ui.components.themed.SongMatchingDialog
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.getAlbumVersionFromVideo
 import it.fast4x.rimusic.utils.isExplicit
+import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
 import it.fast4x.rimusic.utils.updateLocalPlaylist
@@ -1514,7 +1515,9 @@ fun LocalPlaylistSongs(
                                         onSyncronize = {sync();SmartMessage(context.resources.getString(R.string.done), context = context) },
                                         onRename = {
                                             //if (playlistPreview.playlist.browseId == null || playlistNotMonthlyType || playlistNotPipedType)
-                                            if ((((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType)
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                            } else if ((((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType)
                                                   || (playlistPreview.playlist.browseId?.startsWith("editable:") == true))
                                                     || !playlistPreview.playlist.name.contains(YTP_PREFIX)
                                             ){
@@ -1610,7 +1613,9 @@ fun LocalPlaylistSongs(
                                                 SmartMessage(context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist), context = context)
                                         },
                                         onDelete = {
-                                            isDeleting = true
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                            } else isDeleting = true
                                         },
                                         showonListenToYT = !playlistPreview.playlist.browseId.isNullOrBlank(),
                                         onListenToYT = {
@@ -2017,7 +2022,9 @@ fun LocalPlaylistSongs(
                     SwipeableQueueItem(
                         mediaItem = song.asMediaItem,
                         onRemoveFromQueue = {
-                            if ((playlistPreview?.playlist?.browseId == null)
+                            if (!isNetworkConnected(context) && playlistPreview?.playlist?.browseId?.startsWith("editable:") == true){
+                                SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                            } else if ((playlistPreview?.playlist?.browseId == null)
                                 || playlistPreview?.playlist?.browseId?.startsWith("editable:") == true
                                 || (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == false)) {
                                 Database.asyncTransaction {

@@ -108,6 +108,7 @@ import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.fadingEdge
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
@@ -334,34 +335,42 @@ fun ArtistOverviewModern(
                                 R.string.following
                             ),
                             onClick = {
-                                val bookmarkedAt =
-                                    if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
+                                if (isYouTubeSyncEnabled() && !isNetworkConnected(context)){
+                                    SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                } else {
+                                    val bookmarkedAt =
+                                        if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                Database.asyncTransaction {
-                                    artist?.copy(bookmarkedAt = bookmarkedAt)
-                                        ?.let(::update)
-                                }
-                                if (isYouTubeSyncEnabled())
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        if (bookmarkedAt == null)
-                                            artistPage.artist.channelId.let {
-                                                if (it != null) {
-                                                    YtMusic.unsubscribeChannel(it)
-                                                    if (artist != null && browseId != null) {
-                                                        Database.updateArtistName(browseId, (artist?.name ?: "").replace(YTP_PREFIX, "", true))
-                                                    }
-                                                }
-                                            }
-                                        else
-                                            artistPage.artist.channelId.let {
-                                                if (it != null) {
-                                                    YtMusic.subscribeChannel(it)
-                                                    if (artist != null && browseId != null) {
-                                                        Database.updateArtistName(browseId, YTP_PREFIX + artist?.name)
-                                                    }
-                                                }
-                                            }
+                                    Database.asyncTransaction {
+                                        artist?.copy(bookmarkedAt = bookmarkedAt)
+                                            ?.let(::update)
                                     }
+                                    if (isYouTubeSyncEnabled())
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            if (bookmarkedAt == null)
+                                                artistPage.artist.channelId.let {
+                                                    if (it != null) {
+                                                        YtMusic.unsubscribeChannel(it)
+                                                        if (artist != null && browseId != null) {
+                                                            Database.updateArtistName(browseId,(artist?.name ?: "").replace(YTP_PREFIX,"",true)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            else
+                                                artistPage.artist.channelId.let {
+                                                    if (it != null) {
+                                                        YtMusic.subscribeChannel(it)
+                                                        if (artist != null && browseId != null) {
+                                                            Database.updateArtistName(
+                                                                browseId,
+                                                                YTP_PREFIX + artist?.name
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                }
 
                             },
                             alternative = artist?.bookmarkedAt == null,
