@@ -167,7 +167,10 @@ import it.fast4x.rimusic.utils.right
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -2023,6 +2026,10 @@ fun SongMatchingDialog(
                                                 Album(id = song.album?.endpoint?.browseId ?: "", title = song.asMediaItem.mediaMetadata.albumTitle?.toString()),
                                                 SongAlbumMap(songId = song.asMediaItem.mediaId, albumId = song.album?.endpoint?.browseId ?: "", position = null)
                                             )
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                val album = Database.album(song.album?.endpoint?.browseId ?: "").firstOrNull()
+                                                album?.copy(thumbnailUrl = song.thumbnail?.url)?.let { update(it) }
+                                            }
                                             if ((artistsNames != null) && (artistsIds != null)) {
                                                 artistsNames.let { artistNames ->
                                                     artistsIds.let { artistIds ->

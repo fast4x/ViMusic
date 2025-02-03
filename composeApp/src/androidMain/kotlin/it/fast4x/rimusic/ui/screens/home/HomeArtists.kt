@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.YTP_PREFIX
@@ -86,6 +87,7 @@ import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @ExperimentalMaterial3Api
 @UnstableApi
@@ -135,6 +137,7 @@ fun HomeArtists(
     var filterBy by rememberPreference(filterByKey, FilterBy.All)
     val (colorPalette, typography) = LocalAppearance.current
     val menuState = LocalMenuState.current
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect( Unit, sort.sortBy, sort.sortOrder, artistType ) {
         when( artistType ) {
@@ -161,6 +164,21 @@ fun HomeArtists(
         }
 
         lazyGridState.scrollToItem( scrollIndex, scrollOffset )
+    }
+
+    if (items.any{it.thumbnailUrl == null}) {
+        LaunchedEffect(Unit) {
+            withContext(Dispatchers.IO) {
+                items.filter { it.thumbnailUrl == null }.forEach { artist ->
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val artistThumbnail = YtMusic.getArtistPage(artist.id).getOrNull()?.artist?.thumbnail?.url
+                        Database.asyncTransaction {
+                            update(artist.copy(thumbnailUrl = artistThumbnail))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     val sync = autoSyncToolbutton(R.string.autosync_channels)

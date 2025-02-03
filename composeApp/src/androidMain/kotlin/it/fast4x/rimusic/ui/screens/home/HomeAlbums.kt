@@ -101,6 +101,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -149,6 +150,7 @@ fun HomeAlbums(
 
     var albumType by rememberPreference(albumTypeKey, AlbumsType.Favorites )
     val buttonsList = AlbumsType.entries.map { it to it.textName }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect( sort.sortBy, sort.sortOrder, albumType ) {
         when ( albumType ) {
@@ -178,6 +180,24 @@ fun HomeAlbums(
 
         lazyGridState.scrollToItem( scrollIndex, scrollOffset )
     }
+
+    if (albumType == AlbumsType.Library) {
+        if (items.any{it.thumbnailUrl == null}) {
+            LaunchedEffect(Unit) {
+                withContext(Dispatchers.IO) {
+                    items.filter { it.thumbnailUrl == null }.forEach { album ->
+                        coroutineScope.launch(Dispatchers.IO) {
+                            Database.asyncTransaction {
+                                val albumThumbnail = albumThumbnailFromSong(album.id)
+                                update(album.copy(thumbnailUrl = albumThumbnail))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     val sync = autoSyncToolbutton(R.string.autosync_albums)
 

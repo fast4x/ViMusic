@@ -54,6 +54,7 @@ import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -791,6 +792,11 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
                     SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
                 )
+                CoroutineScope(Dispatchers.IO).launch {
+                val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+                }
+
                 if ((artistsNames != null) && (artistsIds != null)) {
                     artistsNames.let { artistNames ->
                         artistsIds.let { artistIds ->
@@ -855,6 +861,10 @@ suspend fun updateLocalPlaylist(song: Song){
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
                     SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
                 )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+                }
 
                 if ((artistsNames != null) && (artistsIds != null)) {
                     artistsNames.let { artistNames ->
