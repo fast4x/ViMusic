@@ -439,12 +439,10 @@ fun LocalPlaylistSongs(
             onDismiss = { isDeleting = false },
             onConfirm = {
                 CoroutineScope(Dispatchers.IO).launch {
-                    if (isYouTubeSyncEnabled()) {
-                        /*if (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true && playlistPreview?.playlist?.browseId?.startsWith("RD") == true){
-                            playlistPreview?.playlist?.browseId?.let { YtMusic.removelikePlaylistOrAlbum(it) }
-                        } else*/ //when we can figure out how to recognize an editable playlist
-                        playlistPreview?.playlist?.browseId?.let { YtMusic.removelikePlaylistOrAlbum(it) }
-                        playlistPreview?.playlist?.browseId?.let { YtMusic.deletePlaylist(it) }
+                    if (isYouTubeSyncEnabled() && playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true) {
+                        if (playlistPreview?.playlist?.browseId?.startsWith("editable:") == true){
+                            playlistPreview?.playlist?.browseId?.let { YtMusic.deletePlaylist(it) }
+                        } else { playlistPreview?.playlist?.browseId?.let { YtMusic.removelikePlaylistOrAlbum(it) }}
                         println("Innertube YtMusic deletetePlaylist")
                     }
                     Database.asyncTransaction {
@@ -759,10 +757,12 @@ fun LocalPlaylistSongs(
             setValue = { text ->
                 if (isRenaming) {
                     CoroutineScope(Dispatchers.IO).launch {
+                        if (isYouTubeSyncEnabled() && (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true)) {
                         println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
                         playlistPreview?.playlist?.browseId?.let {
                             println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
                             YtMusic.renamePlaylist(it, text)
+                            }
                         }
                         Database.asyncTransaction {
                             playlistPreview?.playlist?.copy(
@@ -1514,7 +1514,10 @@ fun LocalPlaylistSongs(
                                         onSyncronize = {sync();SmartMessage(context.resources.getString(R.string.done), context = context) },
                                         onRename = {
                                             //if (playlistPreview.playlist.browseId == null || playlistNotMonthlyType || playlistNotPipedType)
-                                            if ((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType) {
+                                            if ((((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType)
+                                                  || (playlistPreview.playlist.browseId?.startsWith("editable:") == true))
+                                                    || !playlistPreview.playlist.name.contains(YTP_PREFIX)
+                                            ){
                                                 isRenaming = true
                                             }
                                             else
@@ -2014,34 +2017,43 @@ fun LocalPlaylistSongs(
                     SwipeableQueueItem(
                         mediaItem = song.asMediaItem,
                         onRemoveFromQueue = {
-                            Database.asyncTransaction {
-                                Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                                Database.delete(SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE))
-                            }
-
-                            if(isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    playlistPreview?.playlist?.browseId?.let { YtMusic.removeFromPlaylist(
-                                        it, song.song.id
-                                    ) }
+                            if ((playlistPreview?.playlist?.browseId == null)
+                                || playlistPreview?.playlist?.browseId?.startsWith("editable:") == true
+                                || (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == false)) {
+                                Database.asyncTransaction {
+                                    Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
+                                    Database.delete(
+                                        SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE)
+                                    )
                                 }
+                                if (isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        playlistPreview?.playlist?.browseId?.let {
+                                            YtMusic.removeFromPlaylist(it, song.song.id)
+                                        }
+                                    }
 
-                            if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
-                                removeFromPipedPlaylist(
-                                    context = context,
-                                    coroutineScope = coroutineScope,
-                                    pipedSession = pipedSession.toApiSession(),
-                                    id = UUID.fromString(playlistPreview?.playlist?.browseId),
-                                    positionInPlaylist
-                                )
-                            }
-                            coroutineScope.launch {
+                                if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
+                                    removeFromPipedPlaylist(
+                                        context = context,
+                                        coroutineScope = coroutineScope,
+                                        pipedSession = pipedSession.toApiSession(),
+                                        id = UUID.fromString(playlistPreview?.playlist?.browseId),
+                                        positionInPlaylist
+                                    )
+                                }
+                                coroutineScope.launch {
+                                    SmartMessage(
+                                        context.resources.getString(R.string.deleted) + " \"" + song.asMediaItem.mediaMetadata.title.toString() + " - " + song.asMediaItem.mediaMetadata.artist.toString() + "\" ",
+                                        type = PopupType.Warning,
+                                        context = context,
+                                        durationLong = true
+                                    )
+                                }
+                            } else {
                                 SmartMessage(
-                                    context.resources.getString(R.string.deleted) + " \"" + song.asMediaItem.mediaMetadata.title.toString() + " - " + song.asMediaItem.mediaMetadata.artist.toString() + "\" ",
-                                    type = PopupType.Warning, context = context, durationLong = true
-                                )
+                                    context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
                             }
-
                         },
                         onPlayNext = {
                             binder?.player?.addNext(song.asMediaItem)

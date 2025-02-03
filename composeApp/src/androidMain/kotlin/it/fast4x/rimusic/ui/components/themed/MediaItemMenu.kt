@@ -70,6 +70,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
@@ -117,6 +118,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.context
+import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
@@ -181,26 +183,31 @@ fun InPlaylistMediaItemMenu(
         mediaItem = song.asMediaItem,
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
-            Database.asyncTransaction {
-                deleteSongFromPlaylist(song.id, playlistId)
-            }
+            if ((playlist?.playlist?.browseId == null)
+                || playlist.playlist.browseId.startsWith("editable:")
+                || !(playlist.playlist.name.contains(YTP_PREFIX))) {
+                Database.asyncTransaction {deleteSongFromPlaylist(song.id, playlistId)}
 
-            if(isYouTubeSyncEnabled() && playlist?.playlist?.browseId != null && !playlist.playlist.name.startsWith(PIPED_PREFIX))
-                CoroutineScope(Dispatchers.IO).launch {
-                    playlist.playlist.browseId.let { YtMusic.removeFromPlaylist(
-                        it, song.id
-                    ) }
+                if (isYouTubeSyncEnabled() && playlist?.playlist?.browseId != null && !playlist.playlist.name.startsWith(PIPED_PREFIX))
+                    CoroutineScope(Dispatchers.IO).launch {
+                        playlist.playlist.browseId.let {
+                            YtMusic.removeFromPlaylist(it, song.id)
+                        }
+                    }
+
+                if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
+                    Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.playlist.browseId}")
+                    removeFromPipedPlaylist(
+                        context = context,
+                        coroutineScope = coroutineScope,
+                        pipedSession = pipedSession.toApiSession(),
+                        id = UUID.fromString(playlist.playlist.browseId),
+                        positionInPlaylist
+                    )
                 }
-
-            if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
-                Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.playlist.browseId}")
-                removeFromPipedPlaylist(
-                    context = context,
-                    coroutineScope = coroutineScope,
-                    pipedSession = pipedSession.toApiSession(),
-                    id = UUID.fromString(playlist.playlist.browseId),
-                    positionInPlaylist
-                )
+            } else {
+                SmartMessage(
+                    context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
             }
         },
         onAddToPreferites = {
@@ -931,10 +938,12 @@ fun MediaItemMenu(
                 it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
             }
 
+            val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true }
+
             val unpinnedPlaylists = playlistPreviews.filter {
                 !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
-                !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) //&&
-                //!it.playlist.name.startsWith(PIPED_PREFIX, 0, true)
+                        !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) &&
+                        !it.playlist.name.contains(YTP_PREFIX)
             }
 
             var isCreatingNewPlaylist by rememberSaveable {
@@ -1009,6 +1018,43 @@ fun MediaItemMenu(
                             MenuEntry(
                                 icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
                                 text = playlistPreview.playlist.name.substringAfter(PINNED_PREFIX),
+                                secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
+                                onClick = {
+                                    onDismiss()
+                                    onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
+                                },
+                                trailingContent = {
+                                    IconButton(
+                                        icon = R.drawable.open,
+                                        color = colorPalette().text,
+                                        onClick = {
+                                            if (onGoToPlaylist != null) {
+                                                onGoToPlaylist(playlistPreview.playlist.id)
+                                                onDismiss()
+                                            }
+                                            navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                        },
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (youtubePlaylists.isNotEmpty()) {
+                    BasicText(
+                        text = stringResource(R.string.ytm_playlists),
+                        style = typography().m.semiBold,
+                        modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+                    )
+
+                    onAddToPlaylist?.let { onAddToPlaylist ->
+                        youtubePlaylists.forEach { playlistPreview ->
+                            MenuEntry(
+                                icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
+                                text = cleanPrefix(playlistPreview.playlist.name),
                                 secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
                                 onClick = {
                                     onDismiss()
@@ -1741,9 +1787,12 @@ fun AddToPlaylistItemMenu(
         it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
     }
 
+    val youtubePlaylists = playlistPreviews.filter { it.playlist.browseId?.startsWith("editable:") == true }
+
     val unpinnedPlaylists = playlistPreviews.filter {
         !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
-                !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true)
+                !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) &&
+                    !it.playlist.name.contains(YTP_PREFIX)
     }
 
     Menu(
@@ -1785,6 +1834,44 @@ fun AddToPlaylistItemMenu(
                     MenuEntry(
                         icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
                         text = playlistPreview.playlist.name.substringAfter(PINNED_PREFIX),
+                        secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
+                        onClick = {
+                            if (playlistIds.contains(playlistPreview.playlist.id)){
+                                onRemoveFromPlaylist(playlistPreview.playlist)
+                            } else onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
+                        },
+                        trailingContent = {
+                            IconButton(
+                                icon = R.drawable.open,
+                                color = colorPalette().text,
+                                onClick = {
+                                    if (onGoToPlaylist != null) {
+                                        onGoToPlaylist(playlistPreview.playlist.id)
+                                        onDismiss()
+                                    }
+                                    navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                },
+                                modifier = Modifier
+                                    .size(24.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (youtubePlaylists.isNotEmpty()) {
+            BasicText(
+                text = stringResource(R.string.ytm_playlists),
+                style = typography().m.semiBold,
+                modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+            )
+
+            onAddToPlaylist.let { onAddToPlaylist ->
+                youtubePlaylists.forEach { playlistPreview ->
+                    MenuEntry(
+                        icon = if (playlistIds.contains(playlistPreview.playlist.id)) R.drawable.checkmark else R.drawable.add_in_playlist,
+                        text = cleanPrefix(playlistPreview.playlist.name),
                         secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
                         onClick = {
                             if (playlistIds.contains(playlistPreview.playlist.id)){

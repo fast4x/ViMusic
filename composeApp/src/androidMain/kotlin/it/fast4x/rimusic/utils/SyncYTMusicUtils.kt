@@ -48,13 +48,14 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                 .filterNot { it.key == "VLLM" || it.key == "VLSE" }
 
             val localPlaylists = Database.ytmPrivatePlaylists().firstOrNull()
+            val editable = "editable:"
 
             ytmPrivatePlaylists.forEach { remotePlaylist ->
                 withContext(Dispatchers.IO) {
                     val playlistIdChecked =
                         if (remotePlaylist.key.startsWith("VL")) remotePlaylist.key.substringAfter("VL") else remotePlaylist.key
                     var localPlaylist =
-                        localPlaylists?.find { it?.browseId == playlistIdChecked }
+                        localPlaylists?.find { it?.browseId == editable+playlistIdChecked }
                     println("Local playlist: $localPlaylist")
                     println("Remote playlist: $remotePlaylist")
                     if (localPlaylist == null && playlistIdChecked.isNotEmpty()) {
@@ -62,10 +63,10 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                             name = (YTP_PREFIX + remotePlaylist.title) ?: "",
                             browseId = playlistIdChecked,
                         )
-                        Database.insert(localPlaylist.copy(browseId = playlistIdChecked))
+                        Database.insert(localPlaylist.copy(browseId = editable+playlistIdChecked))
                     }
 
-                    Database.playlistWithSongsByBrowseId(playlistIdChecked).firstOrNull()?.let {
+                    Database.playlistWithSongsByBrowseId(editable+playlistIdChecked).firstOrNull()?.let {
                         if (it.playlist.id != 0L && it.songs.isEmpty())
                             it.playlist.id.let { id ->
                                 ytmPrivatePlaylistSync(
@@ -76,7 +77,7 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                     }
                 }
             }
-            (localPlaylists?.filter { playlist -> playlist?.browseId !in ytmPrivatePlaylists.map { if (it.key.startsWith("VL")) it.key.substringAfter("VL") else it.key }  })?.forEach { playlist ->
+            (localPlaylists?.filter { playlist -> playlist?.browseId?.substringAfter("editable:") !in ytmPrivatePlaylists.map { if (it.key.startsWith("VL")) it.key.substringAfter("VL") else it.key }  })?.forEach { playlist ->
                 if (playlist != null) Database.asyncTransaction{ delete(playlist) }
             }
 
@@ -97,7 +98,7 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
                 withContext(Dispatchers.IO) {
                     plist.browseId?.let {
                         YtMusic.getPlaylist(
-                            playlistId = it
+                            playlistId = it.substringAfter("editable:")
                         ).completed()
                     }
                 }

@@ -184,7 +184,7 @@ val Innertube.SongItem.asMediaItem: MediaItem
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(info?.name)
-                .setArtist(authors?.joinToString(", ") { it.name ?: "" })
+                .setArtist(authors?.filter {it.name?.matches(Regex("\\s*([,&])\\s*")) == false }?.joinToString(", ") { it.name ?: "" })
                 .setAlbumTitle(album?.name)
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setExtras(
