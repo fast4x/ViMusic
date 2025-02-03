@@ -77,6 +77,7 @@ import it.fast4x.rimusic.ui.components.tab.toolbar.Randomizer
 import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
 import it.fast4x.rimusic.ui.components.themed.FilterMenu
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.utils.Preference.HOME_ARTIST_ITEM_SIZE
 import it.fast4x.rimusic.utils.autoSyncToolbutton
@@ -138,6 +139,10 @@ fun HomeArtists(
     val (colorPalette, typography) = LocalAppearance.current
     val menuState = LocalMenuState.current
     val coroutineScope = rememberCoroutineScope()
+
+    if (!isYouTubeSyncEnabled()) {
+        filterBy = FilterBy.All
+    }
 
     LaunchedEffect( Unit, sort.sortBy, sort.sortOrder, artistType ) {
         when( artistType ) {
@@ -245,47 +250,51 @@ fun HomeArtists(
                             onValueUpdate = { artistType = it },
                             modifier = Modifier.padding(end = 12.dp)
                         )
-                        Row(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                        ){
-                            BasicText(
-                                text = when (filterBy) {
-                                    FilterBy.All -> stringResource(R.string.all)
-                                    FilterBy.Local -> stringResource(R.string.on_device)
-                                    FilterBy.YoutubeLibrary -> stringResource(R.string.ytm_library)
-                                },
-                                style = typography.xs.semiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                        if (isYouTubeSyncEnabled()) {
+                            Row(
                                 modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .padding(end = 5.dp)
-                                    .clickable {
-                                        menuState.display {
-                                            FilterMenu(
-                                                title = stringResource(R.string.filter_by),
-                                                onDismiss = menuState::hide,
-                                                onAll = {filterBy = FilterBy.All},
-                                                onYoutubeLibrary = {filterBy = FilterBy.YoutubeLibrary},
-                                                onLocal = {filterBy = FilterBy.Local}
-                                            )
-                                        }
+                                    .align(Alignment.CenterEnd)
+                            ) {
+                                BasicText(
+                                    text = when (filterBy) {
+                                        FilterBy.All -> stringResource(R.string.all)
+                                        FilterBy.Local -> stringResource(R.string.on_device)
+                                        FilterBy.YoutubeLibrary -> stringResource(R.string.ytm_library)
+                                    },
+                                    style = typography.xs.semiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                        .padding(end = 5.dp)
+                                        .clickable {
+                                            menuState.display {
+                                                FilterMenu(
+                                                    title = stringResource(R.string.filter_by),
+                                                    onDismiss = menuState::hide,
+                                                    onAll = { filterBy = FilterBy.All },
+                                                    onYoutubeLibrary = {
+                                                        filterBy = FilterBy.YoutubeLibrary
+                                                    },
+                                                    onLocal = { filterBy = FilterBy.Local }
+                                                )
+                                            }
 
-                                    }
-                            )
-                            HeaderIconButton(
-                                icon = R.drawable.playlist,
-                                color = colorPalette.text,
-                                onClick = {},
-                                modifier = Modifier
-                                    .offset(0.dp, 2.5.dp)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = {}
-                                    )
-                            )
+                                        }
+                                )
+                                HeaderIconButton(
+                                    icon = R.drawable.playlist,
+                                    color = colorPalette.text,
+                                    onClick = {},
+                                    modifier = Modifier
+                                        .offset(0.dp, 2.5.dp)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = {}
+                                        )
+                                )
+                            }
                         }
                     }
                 }
