@@ -18,6 +18,8 @@ import it.fast4x.rimusic.Database.Companion.update
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.enums.PlaylistSongSortBy
+import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.isAutoSyncEnabled
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
@@ -50,6 +52,10 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
             val localPlaylists = Database.ytmPrivatePlaylists().firstOrNull()
             val editable = "editable:"
 
+            (localPlaylists?.filter { playlist -> playlist?.browseId?.substringAfter("editable:") !in ytmPrivatePlaylists.map { if (it.key.startsWith("VL")) it.key.substringAfter("VL") else it.key }  })?.forEach { playlist ->
+                if (playlist != null) Database.asyncTransaction{ delete(playlist) }
+            }
+
             ytmPrivatePlaylists.forEach { remotePlaylist ->
                 withContext(Dispatchers.IO) {
                     val playlistIdChecked =
@@ -67,18 +73,16 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                     }
 
                     Database.playlistWithSongsByBrowseId(editable+playlistIdChecked).firstOrNull()?.let {
-                        if (it.playlist.id != 0L && it.songs.isEmpty())
+                        if (it.playlist.id != 0L){
                             it.playlist.id.let { id ->
                                 ytmPrivatePlaylistSync(
                                     it.playlist,
                                     id
                                 )
                             }
+                        }
                     }
                 }
-            }
-            (localPlaylists?.filter { playlist -> playlist?.browseId?.substringAfter("editable:") !in ytmPrivatePlaylists.map { if (it.key.startsWith("VL")) it.key.substringAfter("VL") else it.key }  })?.forEach { playlist ->
-                if (playlist != null) Database.asyncTransaction{ delete(playlist) }
             }
 
         }.onFailure {
@@ -104,7 +108,7 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
                 }
             }?.getOrNull()?.let { remotePlaylist ->
                 if (remotePlaylist.songs.isNotEmpty()) {
-                    Database.clearPlaylist(playlistId)
+                    //Database.clearPlaylist(playlistId)
 
                     remotePlaylist.songs
                         .map(Innertube.SongItem::asMediaItem)
@@ -116,6 +120,12 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
                                 position = position
                             )
                         }.let(Database::insertSongPlaylistMaps)
+                }
+                runBlocking(Dispatchers.IO) {
+                    val localPlaylistSongs = Database.songsPlaylist(playlistId,PlaylistSongSortBy.Position,SortOrder.Ascending).firstOrNull()
+                    localPlaylistSongs?.filter {it.asMediaItem.mediaId !in remotePlaylist.songs.map { it.asMediaItem.mediaId }}?.forEach { song ->
+                        deleteSongFromPlaylist(song.asMediaItem.mediaId,playlistId)
+                    }
                 }
             }
         }

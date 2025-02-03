@@ -560,7 +560,7 @@ interface Database {
     fun eventWithSongByPeriod(date: Long, limit:Long = Long.MAX_VALUE): Flow<List<EventWithSong>>
 
     @Transaction
-    @Query("SELECT * FROM Playlist WHERE name LIKE '${YTP_PREFIX}' || '%'")
+    @Query("SELECT * FROM Playlist WHERE name LIKE '%' || '${YTP_PREFIX}' || '%'")
     fun ytmPrivatePlaylists(): Flow<List<Playlist?>>
 
     @Transaction

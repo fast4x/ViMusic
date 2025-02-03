@@ -382,7 +382,9 @@ fun HomeLibrary(
                             PlaylistsType.YTPlaylist -> YTP_PREFIX
                         }
                     val condition: (PlaylistPreview) -> Boolean = {
-                        it.playlist.name.startsWith( listPrefix, true )
+                        if (playlistType == PlaylistsType.YTPlaylist){
+                            it.playlist.name.contains(listPrefix)
+                        } else it.playlist.name.startsWith( listPrefix, true )
                     }
                     items(
                         items = itemsOnDisplay.filter( condition ),
