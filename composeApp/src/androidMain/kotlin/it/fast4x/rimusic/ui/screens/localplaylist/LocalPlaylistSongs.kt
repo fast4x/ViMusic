@@ -502,7 +502,7 @@ fun LocalPlaylistSongs(
                         withContext(Dispatchers.IO) {
                             playlistPreview.playlist.browseId?.let {
                                 YtMusic.getPlaylist(
-                                    playlistId = it
+                                    playlistId = it.substringAfter("editable:")
                                 ).completed()
                             }
                         }
