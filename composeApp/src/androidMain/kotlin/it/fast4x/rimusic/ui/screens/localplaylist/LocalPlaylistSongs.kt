@@ -1480,7 +1480,7 @@ fun LocalPlaylistSongs(
                                             }
                                         },
                                         showOnSyncronize = !playlistPreview.playlist.browseId.isNullOrBlank(),
-                                        showLinkUnlink = isNetworkConnected(context()) && playlistPreview.playlist.name.contains(YTP_PREFIX),
+                                        showLinkUnlink = playlistPreview.playlist.name.contains(YTP_PREFIX) && isYouTubeSyncEnabled(),
                                         /*
                                         onSyncronize = {
                                             if (!playlistPreview.playlist.name.startsWith(
@@ -2063,7 +2063,7 @@ fun LocalPlaylistSongs(
                     SwipeableQueueItem(
                         mediaItem = song.asMediaItem,
                         onRemoveFromQueue = {
-                            if (!isNetworkConnected(context) && playlistPreview?.playlist?.browseId?.startsWith("editable:") == true){
+                            if (!isNetworkConnected(context) && playlistPreview?.playlist?.browseId?.startsWith("editable:") == true && isYouTubeSyncEnabled()){
                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context)
                             } else if ((playlistPreview?.playlist?.browseId == null)
                                 || playlistPreview?.playlist?.browseId?.startsWith("editable:") == true
