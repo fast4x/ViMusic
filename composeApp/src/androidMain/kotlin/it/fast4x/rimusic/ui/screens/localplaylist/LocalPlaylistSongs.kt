@@ -759,11 +759,11 @@ fun LocalPlaylistSongs(
             setValue = { text ->
                 if (isRenaming) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        if (isYouTubeSyncEnabled() && (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true)) {
+                        if (isYouTubeSyncEnabled() && playlistPreview?.playlist?.browseId?.startsWith("editable:") == true) {
                         println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
                         playlistPreview?.playlist?.browseId?.let {
                             println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
-                            YtMusic.renamePlaylist(it, text)
+                            YtMusic.renamePlaylist(it.substringAfter("editable:"), text)
                             }
                         }
                         Database.asyncTransaction {
@@ -1296,25 +1296,45 @@ fun LocalPlaylistSongs(
                     )
 
 
-                    HeaderIconButton(
-                        icon = R.drawable.random,
-                        enabled = playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))},
-                        color = if (playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))}) colorPalette.text else colorPalette.textDisabled,
-                        onClick = {},
-                        modifier = Modifier
-                            .combinedClickable(
-                                onClick = {
-                                    if (playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))}) {
-                                        showConfirmMatchAllDialog = true
-                                    } else {
-                                        SmartMessage(context.resources.getString(R.string.no_videos_found), context = context)
+                    if ((playlistPreview?.playlist?.browseId == null) || (playlistPreview?.playlist?.browseId?.startsWith("editable:") == true)) {
+                        HeaderIconButton(
+                            icon = R.drawable.random,
+                            enabled = playlistSongs.any {
+                                (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                    LOCAL_KEY_PREFIX
+                                ))
+                            },
+                            color = if (playlistSongs.any {
+                                    (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                        LOCAL_KEY_PREFIX
+                                    ))
+                                }) colorPalette.text else colorPalette.textDisabled,
+                            onClick = {},
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {
+                                        if (playlistSongs.any {
+                                                (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                                    LOCAL_KEY_PREFIX
+                                                ))
+                                            }) {
+                                            showConfirmMatchAllDialog = true
+                                        } else {
+                                            SmartMessage(
+                                                context.resources.getString(R.string.no_videos_found),
+                                                context = context
+                                            )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        SmartMessage(
+                                            context.resources.getString(R.string.get_album_version),
+                                            context = context
+                                        )
                                     }
-                                },
-                                onLongClick = {
-                                    SmartMessage(context.resources.getString(R.string.get_album_version), context = context)
-                                }
-                            )
-                    )
+                                )
+                        )
+                    }
 
                     if (showConfirmDeleteDownloadDialog) {
                         ConfirmationDialog(
@@ -1536,7 +1556,7 @@ fun LocalPlaylistSongs(
                                         },
                                         onRename = {
                                             //if (playlistPreview.playlist.browseId == null || playlistNotMonthlyType || playlistNotPipedType)
-                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true){
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith("editable:") == true && isYouTubeSyncEnabled()){
                                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context)
                                             } else if ((((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType)
                                                   || (playlistPreview.playlist.browseId?.startsWith("editable:") == true))
@@ -2228,8 +2248,17 @@ fun LocalPlaylistSongs(
                                         menuState.display {
                                             InPlaylistMediaItemMenu(
                                                 onMatchingSong = {
-                                                    songMatchingDialogEnable = true
-                                                    matchingSongEntity = song
+                                                    if (!isNetworkConnected(context) && playlistPreview?.playlist?.browseId?.startsWith("editable:") == true && isYouTubeSyncEnabled()){
+                                                        SmartMessage(context.resources.getString(R.string.no_connection), context = context)
+                                                    } else if ((playlistPreview?.playlist?.browseId == null)
+                                                        || playlistPreview?.playlist?.browseId?.startsWith("editable:") == true
+                                                        || (playlistPreview?.playlist?.name?.contains(YTP_PREFIX)) == false) {
+                                                        songMatchingDialogEnable = true
+                                                        matchingSongEntity = song
+                                                    } else {
+                                                        SmartMessage(
+                                                            context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
+                                                    }
                                                 },
                                                 navController = navController,
                                                 playlist = playlistPreview,

@@ -186,7 +186,7 @@ fun InPlaylistMediaItemMenu(
         mediaItem = song.asMediaItem,
         onDismiss = onDismiss,
         onRemoveFromPlaylist = {
-            if (!isNetworkConnected(context) && playlist?.playlist?.browseId?.startsWith("editable:") == true){
+            if (!isNetworkConnected(context) && playlist?.playlist?.browseId?.startsWith("editable:") == true && isYouTubeSyncEnabled()){
                 SmartMessage(context.resources.getString(R.string.no_connection), context = context)
             } else if ((playlist?.playlist?.browseId == null)
                 || playlist.playlist.browseId.startsWith("editable:")
@@ -196,7 +196,7 @@ fun InPlaylistMediaItemMenu(
                 if (isYouTubeSyncEnabled() && playlist?.playlist?.browseId != null && !playlist.playlist.name.startsWith(PIPED_PREFIX))
                     CoroutineScope(Dispatchers.IO).launch {
                         playlist.playlist.browseId.let {
-                            YtMusic.removeFromPlaylist(it, song.id)
+                            YtMusic.removeFromPlaylist(it.substringAfter("editable:"), song.id)
                         }
                     }
 
