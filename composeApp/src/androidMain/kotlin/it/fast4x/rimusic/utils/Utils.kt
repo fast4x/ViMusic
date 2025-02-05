@@ -28,6 +28,7 @@ import com.zionhuang.innertube.pages.LibraryPage
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.UserAgent
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.playlistPage
@@ -44,6 +45,7 @@ import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
@@ -52,8 +54,10 @@ import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -183,7 +187,7 @@ val Innertube.SongItem.asMediaItem: MediaItem
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(info?.name)
-                .setArtist(authors?.joinToString(", ") { it.name ?: "" })
+                .setArtist(authors?.filter {it.name?.matches(Regex("\\s*([,&])\\s*")) == false }?.joinToString(", ") { it.name ?: "" })
                 .setAlbumTitle(album?.name)
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setExtras(
@@ -687,7 +691,7 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
 }
 
 @OptIn(UnstableApi::class)
-suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : Int){
+suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : Int, playlist : Playlist?){
     val isExtPlaylist = (song.thumbnailUrl == "") && (song.durationText != "0:00")
     var songNotFound: Song
     var random4Digit  = Random.nextInt(1000, 10000)
@@ -776,6 +780,11 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
     Database.asyncTransaction {
         if (findSongIndex() != -1) {
             deleteSongFromPlaylist(song.id, playlistId)
+            if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                CoroutineScope(Dispatchers.IO).launch {
+                    YtMusic.removeFromPlaylist(playlist.browseId ?: "", song.id)
+                }
+            }
             if (matchedSong != null) {
                 if (songExist(matchedSong.asSong.id) == 0) {
                     Database.insert(matchedSong.asMediaItem)
@@ -791,6 +800,14 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
                     SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
                 )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+
+                    if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                        YtMusic.addToPlaylist(playlist.browseId ?: "", matchedSong.asMediaItem.mediaId)
+                    }
+                }
                 if ((artistsNames != null) && (artistsIds != null)) {
                     artistsNames.let { artistNames ->
                         artistsIds.let { artistIds ->
@@ -855,6 +872,10 @@ suspend fun updateLocalPlaylist(song: Song){
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
                     SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
                 )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+                }
 
                 if ((artistsNames != null) && (artistsIds != null)) {
                     artistsNames.let { artistNames ->

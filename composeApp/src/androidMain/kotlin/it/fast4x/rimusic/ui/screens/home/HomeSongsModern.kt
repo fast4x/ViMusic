@@ -86,6 +86,8 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.CacheType
@@ -1382,12 +1384,17 @@ fun HomeSongsModern(
                                                     Timber.e("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                     println("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                 }
-                                                if(isYouTubeSyncEnabled() && !song.song.id.startsWith(
-                                                        LOCAL_KEY_PREFIX))
-                                                    CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.song.asMediaItem.mediaId) }
-                                                    }
                                             }
+                                            if(isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    playlistPreview.playlist.browseId.let { id ->
+                                                        YtMusic.addToPlaylist(cleanPrefix(id ?: ""),items
+                                                            .filterNot {it.song.id.startsWith(LOCAL_KEY_PREFIX)}
+                                                            .map { it.asMediaItem.mediaId })
+                                                    }
+                                                }
+                                            }
+
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 SmartMessage(
                                                     context.resources.getString(R.string.done),

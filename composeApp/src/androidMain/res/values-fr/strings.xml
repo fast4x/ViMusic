@@ -581,7 +581,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Empêcher la lecture de titres avec une limite d\'âge</string>
     <string name="cache_location_private">Privé</string>
     <string name="cache_location_system">Système</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Impossible de renommer une playlist mensuelle ou une playlist piped</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Impossible de renommer une playlist mensuelle, en ligne ou canalisée</string>
     <string name="debug">DÉBOGAGE</string>
     <string name="enable_log_debug">Activer le journal du débogage</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Si activé, créez un fichier journal pour mettre en surbrillance les erreurs</string>
@@ -897,6 +897,14 @@ Volume BAS : titre précédent</string>
     <string name="filter_by">Filtrer par</string>
     <string name="updating_playlist">Mise à jour de la playlist. Veuillez patienter. Ne réduisez pas l\'application et ne la quittez pas.</string>
     <string name="updating_playlist_message">Mettre à jour les titres avec l\'ID d\'album manquant</string>
-    <string name="syncing">Syncing...</string>
-    <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="syncing">Synchronisation...</string>
+    <string name="autosync_channels">Synchronisation automatique des chaînes souscrites</string>
+    <string name="autosync_albums">Synchronisation automatique des albums enregistrés</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Impossible de renommer les albums enregistrés dans la bibliothèque YouTube Music</string>
+    <string name="ytm_library">Bibliothèque YouTube Music</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>

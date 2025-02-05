@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Yaş məhdudiyyətli mahnıları səsləndirməyi əngəllə</string>
     <string name="cache_location_private">Şəxsi</string>
     <string name="cache_location_system">Sistem</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Aylıq və ya piped pleylistlərin adın dəyişmək olmur</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
     <string name="debug">SINAQ</string>
     <string name="enable_log_debug">Sınaq jurnalın aktivləşdir</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Aktivdirsə, xətaları vurğulamaq üçün jurnal faylı yarat</string>
@@ -740,7 +740,7 @@
     <string name="social_reddit_info">Reddit-də icmaya qoşul</string>
     <string name="sleep_timer_ended">Yuxu taymeri bitdi</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Join the community on Discord</string>
+    <string name="social_discord_info">Discord-da icmaya qoşulun</string>
     <string name="discord_enable_rich_presence">Rich Presence-i Aktivləşdir</string>
     <string name="discord_disconnect">Əlaqəni kəs</string>
     <string name="discord_connect">Qoşul</string>
@@ -892,8 +892,16 @@
     <string name="online_songs">Onlayn Mahnılar</string>
     <string name="explicit">Dəqiq</string>
     <string name="filter_by">Sırala</string>
-    <string name="updating_playlist">Updating the Playlist. Please Wait. Do not Minimize or Exit the App</string>
-    <string name="updating_playlist_message">Update the Songs with the Missing Album ID</string>
-    <string name="syncing">Syncing...</string>
-    <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="updating_playlist">Pleylist yenilənir. Xahiş olunur, gözləyin. Tətbiqi kiçiltmə və ya çıxma</string>
+    <string name="updating_playlist_message">Mahnıları Olmayan Albom ID ilə yenilə</string>
+    <string name="syncing">Sinxronlaşdırılır...</string>
+    <string name="autosync_channels">Abunə olunan kanalları avtomatik sinxronizasiya et</string>
+    <string name="autosync_albums">Auto Sync Saved Albums</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>
+    <string name="ytm_library">YTM Library</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>

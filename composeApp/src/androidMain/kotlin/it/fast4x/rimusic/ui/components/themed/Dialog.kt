@@ -106,6 +106,7 @@ import it.fast4x.innertube.requests.ArtistPage
 import it.fast4x.innertube.requests.searchPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.Database.Companion.update
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ColorPaletteMode
@@ -147,11 +148,13 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.px
@@ -166,7 +169,10 @@ import it.fast4x.rimusic.utils.right
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -559,7 +565,6 @@ inline fun SelectorArtistsDialog(
                     HorizontalPager(state = pagerState) { idArtist ->
                         val browseId = values[idArtist].id
                         var artist by persist<Artist?>("artist/$browseId/artist")
-                        var artistPage by persist<ArtistPage?>("artist/$browseId/artistPage")
                         LaunchedEffect(browseId) {
                             Database.artist(values[idArtist].id).collect{artist = it}
                         }
@@ -568,16 +573,9 @@ inline fun SelectorArtistsDialog(
                                 withContext(Dispatchers.IO) {
                                     YtMusic.getArtistPage(browseId = browseId)
                                         .onSuccess { currentArtistPage ->
-                                            artistPage = currentArtistPage
-                                            Database.upsert(
-                                                Artist(
-                                                    id = browseId,
-                                                    name = currentArtistPage.artist.info?.name,
-                                                    thumbnailUrl = currentArtistPage.artist.thumbnail?.url,
-                                                    timestamp = artist?.timestamp,
-                                                    bookmarkedAt = artist?.bookmarkedAt
-                                                )
-                                            )
+                                            artist?.copy(
+                                                thumbnailUrl = currentArtistPage.artist.thumbnail?.url
+                                            )?.let(::update)
                                             Database.artist(values[idArtist].id).collect{artist = it}
                                         }
                                 }
@@ -603,7 +601,7 @@ inline fun SelectorArtistsDialog(
                             )
                             values[idArtist].name?.let { it1 ->
                                 BasicText(
-                                    text = it1,
+                                    text = cleanPrefix(it1),
                                     maxLines = 3,
                                     overflow = TextOverflow.Ellipsis,
                                     style = typography().xs.medium,
@@ -612,7 +610,7 @@ inline fun SelectorArtistsDialog(
                                         .align(Alignment.BottomCenter)
                                 )
                                 BasicText(
-                                    text = it1,
+                                    text = cleanPrefix(it1),
                                     style = typography().xs.medium.merge(TextStyle(
                                         drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
                                         color = if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(0.5f)
@@ -1837,6 +1835,7 @@ fun SongMatchingDialog(
     songToRematch : Song,
     playlistId : Long,
     position : Int,
+    playlist : Playlist?,
     onDismiss: (() -> Unit)
 ) {
     Dialog(
@@ -2016,9 +2015,15 @@ fun SongMatchingDialog(
                                     .clickable(onClick = {
                                         Database.asyncTransaction {
                                             deleteSongFromPlaylist(songToRematch.id, playlistId)
+                                            if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    YtMusic.removeFromPlaylist(playlist.browseId ?: "", songToRematch.id)
+                                                }
+                                            }
                                             if (songExist(song.asSong.id) == 0) {
                                                 Database.insert(song.asMediaItem)
                                             }
+
                                             insert(
                                                 SongPlaylistMap(
                                                     songId = song.asMediaItem.mediaId,
@@ -2030,6 +2035,14 @@ fun SongMatchingDialog(
                                                 Album(id = song.album?.endpoint?.browseId ?: "", title = song.asMediaItem.mediaMetadata.albumTitle?.toString()),
                                                 SongAlbumMap(songId = song.asMediaItem.mediaId, albumId = song.album?.endpoint?.browseId ?: "", position = null)
                                             )
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                val album = Database.album(song.album?.endpoint?.browseId ?: "").firstOrNull()
+                                                album?.copy(thumbnailUrl = song.thumbnail?.url)?.let { update(it) }
+
+                                                if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                                                    YtMusic.addToPlaylist(playlist.browseId ?: "", song.asMediaItem.mediaId)
+                                                }
+                                            }
                                             if ((artistsNames != null) && (artistsIds != null)) {
                                                 artistsNames.let { artistNames ->
                                                     artistsIds.let { artistIds ->

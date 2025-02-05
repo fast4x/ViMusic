@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 23,
-    "identityHash": "2affde115955d91f7d754e3e8d2f0e4b",
+    "version": 26,
+    "identityHash": "0c52317241f9f924cc6598ade2ef840e",
     "entities": [
       {
         "tableName": "Song",
@@ -136,7 +136,7 @@
       },
       {
         "tableName": "Playlist",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `browseId` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `browseId` TEXT, `isEditable` INTEGER NOT NULL, `isYoutubePlaylist` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -154,6 +154,18 @@
             "fieldPath": "browseId",
             "columnName": "browseId",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isEditable",
+            "columnName": "isEditable",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isYoutubePlaylist",
+            "columnName": "isYoutubePlaylist",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -632,7 +644,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2affde115955d91f7d754e3e8d2f0e4b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c52317241f9f924cc6598ade2ef840e')"
     ]
   }
 }

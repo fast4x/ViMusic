@@ -48,6 +48,8 @@ import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
@@ -93,6 +95,8 @@ import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.firstOrNull
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -139,6 +143,13 @@ fun ArtistScreenModern(
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
+    var isInYTMLibrary by remember { mutableStateOf(false) }
+    Database.asyncTransaction {
+        CoroutineScope(Dispatchers.IO).launch {
+            isInYTMLibrary = artist(browseId).firstOrNull()?.name?.startsWith(YTP_PREFIX) == true
+        }
+    }
+
     LaunchedEffect(Unit) {
 
         //artistPage = YtMusic.getArtistPage(browseId)
@@ -159,7 +170,7 @@ fun ArtistScreenModern(
                                 Database.upsert(
                                     Artist(
                                         id = browseId,
-                                        name = currentArtistPage.artist.info?.name,
+                                        name = if (isInYTMLibrary) YTP_PREFIX+currentArtistPage.artist.info?.name else currentArtistPage.artist.info?.name,
                                         thumbnailUrl = currentArtistPage.artist.thumbnail?.url,
                                         timestamp = System.currentTimeMillis(),
                                         bookmarkedAt = currentArtist?.bookmarkedAt
@@ -192,7 +203,7 @@ fun ArtistScreenModern(
                                 .shimmer()
                         )
                     } else {
-                        Header(title = artist?.name ?: "Unknown", actionsContent = {
+                        Header(title = cleanPrefix(artist?.name ?: "Unknown"), actionsContent = {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     verticalAlignment = Alignment.CenterVertically,

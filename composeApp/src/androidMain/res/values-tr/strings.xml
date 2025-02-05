@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Yaş sınırlaması olan şarkıların oynatılmasını engelle</string>
     <string name="cache_location_private">Özel</string>
     <string name="cache_location_system">Sistem</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Aylık veya piped oynatma listesi yeniden adlandırılamaz</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Aylık veya çevrimiçi veya piped çalma listesi yeniden adlandırılamıyor</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Hata ayıklama günlüğünü etkinleştir</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Etkinleştirilmişse, hataları vurgulamak için bir günlük dosyası oluştur</string>
@@ -740,7 +740,7 @@
     <string name="social_reddit_info">Reddit\'te topluluğa katılın</string>
     <string name="sleep_timer_ended">Uyku zamanlayıcısı sona erdi</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Join the community on Discord</string>
+    <string name="social_discord_info">Discord topluluğuna katılın</string>
     <string name="discord_enable_rich_presence">\"Rich presence\"ı etkinleştir</string>
     <string name="discord_disconnect">Bağlantıyı Kes</string>
     <string name="discord_connect">Bağlan</string>
@@ -894,6 +894,14 @@
     <string name="filter_by">Filtrele</string>
     <string name="updating_playlist">Oynatma Listesi Güncelleniyor. Lütfen Bekleyin. Uygulamayı Küçültmeyin veya Uygulamadan Çıkmayın</string>
     <string name="updating_playlist_message">Eksik Albüm Kimliğine Sahip Şarkıları Güncelleyin</string>
-    <string name="syncing">Syncing...</string>
-    <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="syncing">Senkronize ediliyor...</string>
+    <string name="autosync_channels">Abone Olunan Kanalları Otomatik Senkronize Et</string>
+    <string name="autosync_albums">Kayıtlı Albümleri Otomatik Senkronize Et</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Youtube Müzik Kütüphanesinde Kayıtlı Albümler Yeniden Adlandırılamıyor</string>
+    <string name="ytm_library">YTM Kütüphanesi</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>

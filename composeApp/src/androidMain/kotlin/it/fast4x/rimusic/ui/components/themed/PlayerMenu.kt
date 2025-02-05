@@ -20,6 +20,7 @@ import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.context
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.models.SongPlaylistMap
@@ -243,7 +244,7 @@ fun AddToPlaylistPlayerMenu(
 
             if(isYouTubeSyncEnabled())
                 CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
             if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("BaseMediaItemMenu onAddToPlaylist mediaItem ${mediaItem.mediaId}")
@@ -265,14 +266,14 @@ fun AddToPlaylistPlayerMenu(
                         context = context,
                         coroutineScope = coroutineScope,
                         pipedSession = pipedSession.toApiSession(),
-                        id = UUID.fromString(playlist.browseId),positionInPlaylist(mediaItem.mediaId,playlist.id)
+                        id = UUID.fromString(cleanPrefix(playlist.browseId ?: "")),positionInPlaylist(mediaItem.mediaId,playlist.id)
                     )
                 }
             }
             if(isYouTubeSyncEnabled() && playlist.browseId != null && !playlist.name.startsWith(PIPED_PREFIX))
                 CoroutineScope(Dispatchers.IO).launch {
                     playlist.browseId.let { YtMusic.removeFromPlaylist(
-                        it, mediaItem.mediaId
+                        cleanPrefix(it), mediaItem.mediaId
                     ) }
                 }
         },

@@ -87,9 +87,12 @@ import com.valentinilk.shimmer.shimmer
 import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.QueueLoopType
@@ -140,12 +143,15 @@ import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.windows
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.formatAsDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -1012,7 +1018,17 @@ fun Queue(
                                                         )
                                                     )
                                                 }
-                                                //Log.d("mediaItemPos", "added position ${position + index}")
+                                            }
+                                            if(isYouTubeSyncEnabled()
+                                                && playlistPreview.playlist.isEditable == true) {
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    playlistPreview.playlist.browseId.let { id ->
+                                                        YtMusic.addToPlaylist(
+                                                            cleanPrefix(id ?: ""),windows
+                                                            .filterNot {it.mediaItem.mediaId.startsWith(LOCAL_KEY_PREFIX)}
+                                                            .map { it.mediaItem.mediaId })
+                                                    }
+                                                }
                                             }
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
@@ -1028,6 +1044,15 @@ fun Queue(
                                                     )
                                                 }
                                                 //Log.d("mediaItemPos", "add position $position")
+                                            }
+                                            if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable == true) {
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    YtMusic.addToPlaylist(
+                                                        cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                        listMediaItems.map { it.mediaId }
+
+                                                    )
+                                                }
                                             }
                                             listMediaItems.clear()
                                             listMediaItemsIndex.clear()

@@ -43,6 +43,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -81,6 +82,7 @@ fun PlaylistsItemGridMenu(
     onAddToPreferites: (() -> Unit)? = null,
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
     showOnSyncronize: Boolean = false,
+    showLinkUnlink: Boolean = false,
     onSyncronize: (() -> Unit)? = null,
     onRenumberPositions: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -93,6 +95,7 @@ fun PlaylistsItemGridMenu(
     onEditThumbnail: (() -> Unit)? = null,
     onResetThumbnail: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
+    onLinkUnlink: (() -> Unit)? = null,
     disableScrollingText: Boolean
     ) {
     var isViewingPlaylists by remember {
@@ -321,7 +324,9 @@ fun PlaylistsItemGridMenu(
                             thumbnailSizePx = thumbnailSizePx,
                             thumbnailSizeDp = thumbnailSizeDp,
                             modifier = Modifier.height(90.dp),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isYoutubePlaylist = playlist.playlist.isYoutubePlaylist,
+                            isEditable = playlist.playlist.isEditable
                         )
                     }
                 }
@@ -389,6 +394,19 @@ fun PlaylistsItemGridMenu(
                         onClick = {
                             onDismiss()
                             onSyncronize()
+                        }
+                    )
+                }
+
+                if (showLinkUnlink) onLinkUnlink?.let { onLinkUnlink ->
+                    GridMenuItem(
+                        icon = R.drawable.link,
+                        title = if (playlist?.playlist?.isYoutubePlaylist == true) R.string.unlink_from_ytm else R.string.unlink_from_yt,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = {
+                            onDismiss()
+                            onLinkUnlink()
                         }
                     )
                 }

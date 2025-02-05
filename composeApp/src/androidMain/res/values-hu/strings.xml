@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Korhatáros dalok lejátszásának megakadályozása</string>
     <string name="cache_location_private">Privát</string>
     <string name="cache_location_system">Rendszer</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">A havi vagy összekapcsolt lejátszási lista nem nevezhető át</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
     <string name="debug">Hibakeresés</string>
     <string name="enable_log_debug">A hibakeresés naplózásának engedélyezése</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Ha engedélyezve van, létrehoz egy naplófájlt a hibák kiemeléséhez</string>
@@ -896,4 +896,12 @@
     <string name="updating_playlist_message">Update the Songs with the Missing Album ID</string>
     <string name="syncing">Syncing...</string>
     <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="autosync_albums">Auto Sync Saved Albums</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>
+    <string name="ytm_library">YTM Library</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>

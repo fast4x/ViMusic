@@ -580,7 +580,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Запретить воспроизведение песен с ограничением возраста</string>
     <string name="cache_location_private">Внутри файлов приложения</string>
     <string name="cache_location_system">Стандартное (внутри системы)</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Невозможно переименовать ежемесячный или piped плейлист</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Невозможно переименовать ежемесячный или Piped плейлист</string>
     <string name="debug">ОТЛАДКА</string>
     <string name="enable_log_debug">Включить отладку логов</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Если включено, создается файл логов для выявления ошибок</string>
@@ -742,7 +742,7 @@
     <string name="social_reddit_info">Присоединиться к сообществу на Reddit</string>
     <string name="sleep_timer_ended">Таймер сна завершен</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Join the community on Discord</string>
+    <string name="social_discord_info">Присоединиться к сообществу в Discord</string>
     <string name="discord_enable_rich_presence">Включить Rich Presence</string>
     <string name="discord_disconnect">Отключиться</string>
     <string name="discord_connect">Подключиться</string>
@@ -880,7 +880,7 @@
     <string name="disliked_this_collection">Невозможно выполнить это действие, если все песни не понравились</string>
     <string name="toggle_controls_landscape">Вкл./Выкл. управление экрана</string>
     <string name="delete_songs_not_in_library">Удалить песни, которых нет в библиотеке</string>
-    <string name="delete_in_process">Удаление песен, которых нет в вашей библиотеке. Приложение закроется после завершения процесса</string>
+    <string name="delete_in_process">Удаление песен, которых нет в вашей библиотеке. Приложение закроется после завершения процесса удаления</string>
     <string name="nothing_to_delete">Нет данных для удаления</string>
     <string name="get_album_version">Совпадение альбомной/аудиоверсии песен</string>
     <string name="no_videos_found">Песни, соответствующие запросу, не найдены</string>
@@ -896,6 +896,14 @@
     <string name="filter_by">Фильтровать по</string>
     <string name="updating_playlist">Обновление плейлиста. Пожалуйста, подождите. Не сворачивайте и не выходите из приложения</string>
     <string name="updating_playlist_message">Обновить песни с отсутствующим идентификатором альбома</string>
-    <string name="syncing">Syncing...</string>
-    <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="syncing">Синхронизация...</string>
+    <string name="autosync_channels">Автосинхронизация подписанных каналов</string>
+    <string name="autosync_albums">Автосинхронизация сохраненных альбомов</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Невозможно переименовать альбомы, сохраненные в библиотеке Youtube</string>
+    <string name="ytm_library">Библиотека YTM</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>

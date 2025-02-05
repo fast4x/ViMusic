@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -48,9 +49,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextAlign
@@ -76,6 +82,8 @@ import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.UiType
@@ -224,7 +232,7 @@ fun AlbumDetails(
                 Database.upsert(
                     Album(
                         id = browseId,
-                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else albumPage?.album?.title,
+                        title = if (album?.title?.startsWith(YTP_PREFIX) == true) YTP_PREFIX+albumPage?.album?.title else albumPage?.album?.title,
                         thumbnailUrl = if (album?.thumbnailUrl?.startsWith(MODIFIED_PREFIX) == true) album?.thumbnailUrl else albumPage?.album?.thumbnail?.url,
                         year = albumPage?.album?.year,
                         authorsText = if (album?.authorsText?.startsWith(MODIFIED_PREFIX) == true) album?.authorsText else albumPage?.album?.authors
@@ -376,7 +384,8 @@ fun AlbumDetails(
             setValue = {
                 if (it.isNotEmpty()) {
                     Database.asyncTransaction {
-                        updateAlbumTitle(browseId, it)
+                        updateAlbumTitle(browseId,
+                            if (album?.title?.startsWith(YTP_PREFIX) == true) YTP_PREFIX+it else it)
                     }
                 }
             },
@@ -588,19 +597,33 @@ fun AlbumDetails(
                     ) {
                         if (album != null) {
                             if (!isLandscape)
-                                AsyncImage(
-                                    model = album?.thumbnailUrl?.resize(1200, 900),
-                                    contentDescription = "loading...",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                        .fadingEdge(
-                                            top = WindowInsets.systemBars
-                                                .asPaddingValues()
-                                                .calculateTopPadding() + Dimensions.fadeSpacingTop,
-                                            bottom = Dimensions.fadeSpacingBottom
+                                Box {
+                                    AsyncImage(
+                                        model = album?.thumbnailUrl?.resize(1200, 900),
+                                        contentDescription = "loading...",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.Center)
+                                            .fadingEdge(
+                                                top = WindowInsets.systemBars
+                                                    .asPaddingValues()
+                                                    .calculateTopPadding() + Dimensions.fadeSpacingTop,
+                                                bottom = Dimensions.fadeSpacingBottom
+                                            )
+                                    )
+                                    if (album?.title?.startsWith(YTP_PREFIX) == true){
+                                        Image(
+                                            painter = painterResource(R.drawable.ytmusic),
+                                            colorFilter = ColorFilter.tint(Color.Red.copy(0.75f).compositeOver(Color.White)),
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .padding(all = 5.dp)
+                                                .offset(10.dp,10.dp),
+                                            contentDescription = "Background Image",
+                                            contentScale = ContentScale.Fit
                                         )
-                                )
+                                    }
+                                }
 
                             AutoResizeText(
                                 text = cleanPrefix(album?.title ?: ""),
@@ -717,36 +740,59 @@ fun AlbumDetails(
                                 .padding(horizontal = 25.dp)
                                 .combinedClickable(
                                     onClick = {
-                                        val bookmarkedAt =
-                                            if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
+                                        if (isYouTubeSyncEnabled() && !isNetworkConnected(context)){
+                                            SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                        } else {
+                                            val bookmarkedAt =
+                                                if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                        Database.asyncTransaction {
-                                            album
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(::update)
-                                        }
-
-                                        if (bookmarkedAt != null) {
-                                            MyDownloadHelper.autoDownloadWhenAlbumBookmarked(
-                                                context,
-                                                songs.map { it.asMediaItem })
-                                        }
-
-                                        if (isYouTubeSyncEnabled())
-                                            CoroutineScope(Dispatchers.IO).launch {
-                                                if (bookmarkedAt == null)
-                                                    albumPage?.album?.playlistId.let {
-                                                        if (it != null) {
-                                                            YtMusic.removelikePlaylistOrAlbum(it)
-                                                        }
-                                                    }
-                                                else
-                                                    albumPage?.album?.playlistId.let {
-                                                        if (it != null) {
-                                                            YtMusic.likePlaylistOrAlbum(it)
-                                                        }
-                                                    }
+                                            Database.asyncTransaction {
+                                                album
+                                                    ?.copy(bookmarkedAt = bookmarkedAt)
+                                                    ?.let(::update)
                                             }
+
+                                            if (bookmarkedAt != null) {
+                                                MyDownloadHelper.autoDownloadWhenAlbumBookmarked(
+                                                    context,
+                                                    songs.map { it.asMediaItem })
+                                            }
+
+                                            if (isYouTubeSyncEnabled())
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    if (bookmarkedAt == null)
+                                                        albumPage?.album?.playlistId.let {
+                                                            if (it != null) {
+                                                                YtMusic.removelikePlaylistOrAlbum(it)
+                                                                Database.asyncTransaction {
+                                                                    updateAlbumTitle(
+                                                                        browseId,
+                                                                        (album?.title
+                                                                            ?: "").replace(
+                                                                            YTP_PREFIX,
+                                                                            "",
+                                                                            true
+                                                                        )
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    else
+                                                        albumPage?.album?.playlistId.let {
+                                                            if (it != null) {
+                                                                YtMusic.likePlaylistOrAlbum(it)
+                                                                if (album != null) {
+                                                                    Database.asyncTransaction {
+                                                                        updateAlbumTitle(
+                                                                            browseId,
+                                                                            YTP_PREFIX + album?.title
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                }
+                                        }
                                     },
                                     onLongClick = {
                                         SmartMessage(
@@ -958,6 +1004,9 @@ fun AlbumDetails(
                                         },
                                          */
                                             onChangeAlbumTitle = {
+                                                if (album?.title?.startsWith(YTP_PREFIX) == true){
+                                                    SmartMessage(context.resources.getString(R.string.cant_rename_Saved_albums),type = PopupType.Error, context = context)
+                                                } else
                                                 showDialogChangeAlbumTitle = true
                                             },
                                             onChangeAlbumAuthors = {
@@ -1019,12 +1068,17 @@ fun AlbumDetails(
                                                                 )
                                                             )
                                                         }
-
-                                                        if(isYouTubeSyncEnabled())
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.id) }
-                                                            }
                                                     }
+
+                                                if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            YtMusic.addPlaylistToPlaylist(
+                                                                cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                                cleanPrefix(albumPage?.album?.playlistId ?: "")
+
+                                                            )
+                                                        }
+                                                }
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
@@ -1038,10 +1092,15 @@ fun AlbumDetails(
                                                                 )
                                                             )
                                                         }
-                                                        if(isYouTubeSyncEnabled())
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.mediaId) }
-                                                            }
+                                                    }
+                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            YtMusic.addToPlaylist(
+                                                                cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                                listMediaItems.map { it.mediaId }
+
+                                                            )
+                                                        }
                                                     }
                                                     listMediaItems.clear()
                                                     selectItems = false
@@ -1063,6 +1122,122 @@ fun AlbumDetails(
 
                             }
                         )
+
+                    }
+                }
+
+                albumPage?.description?.let { description ->
+                    item(
+                        key = "albumInfo"
+                    ) {
+
+                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
+
+                        BasicText(
+                            text = stringResource(R.string.information),
+                            style = typography().m.semiBold.align(TextAlign.Start),
+                            modifier = sectionTextModifier
+                                .fillMaxWidth()
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                //.padding(top = 16.dp)
+                                .padding(vertical = 16.dp, horizontal = 8.dp)
+                            //.padding(endPaddingValues)
+                            //.padding(end = Dimensions.bottomSpacer)
+                        ) {
+                            IconButton(
+                                icon = R.drawable.translate,
+                                color = if (translateEnabled == true) colorPalette()
+                                    .text else colorPalette()
+                                    .textDisabled,
+                                enabled = true,
+                                onClick = {},
+                                modifier = Modifier
+                                    .padding(all = 8.dp)
+                                    .size(18.dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            translateEnabled = !translateEnabled
+                                        },
+                                        onLongClick = {
+                                            SmartMessage(
+                                                context.resources.getString(R.string.info_translation),
+                                                context = context
+                                            )
+                                        }
+                                    )
+                            )
+                            BasicText(
+                                text = "“",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = (-8).dp)
+                                    .align(Alignment.Top)
+                            )
+
+                            var translatedText by remember { mutableStateOf("") }
+                            val nonTranslatedText by remember {
+                                mutableStateOf(
+                                    if (attributionsIndex == -1) {
+                                        description
+                                    } else {
+                                        description.substring(0, attributionsIndex)
+                                    }
+                                )
+                            }
+
+
+                            if (translateEnabled == true) {
+                                LaunchedEffect(Unit) {
+                                    val result = withContext(Dispatchers.IO) {
+                                        try {
+                                            translator.translate(
+                                                nonTranslatedText,
+                                                languageDestination,
+                                                Language.AUTO
+                                            ).translatedText
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                    translatedText =
+                                        if (result.toString() == "kotlin.Unit") "" else result.toString()
+                                }
+                            } else translatedText = nonTranslatedText
+
+                            BasicText(
+                                text = translatedText,
+                                style = typography().xxs.secondary.align(TextAlign.Justify),
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f)
+                            )
+
+                            BasicText(
+                                text = "„",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = 4.dp)
+                                    .align(Alignment.Bottom)
+                            )
+                        }
+
+                        if (attributionsIndex != -1) {
+                            BasicText(
+                                text = stringResource(R.string.from_wikipedia_cca),
+                                style = typography().xxs.color(
+                                    colorPalette()
+                                        .textDisabled).align(
+                                    TextAlign.Start
+                                ),
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
+                                //.padding(endPaddingValues)
+                            )
+                        }
 
                     }
                 }
@@ -1264,122 +1439,6 @@ fun AlbumDetails(
                             /**********/
 
                     /**********/
-                }
-
-                albumPage?.description?.let { description ->
-                    item(
-                        key = "albumInfo"
-                    ) {
-
-                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
-
-                        BasicText(
-                            text = stringResource(R.string.information),
-                            style = typography().m.semiBold.align(TextAlign.Start),
-                            modifier = sectionTextModifier
-                                .fillMaxWidth()
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                //.padding(top = 16.dp)
-                                .padding(vertical = 16.dp, horizontal = 8.dp)
-                            //.padding(endPaddingValues)
-                            //.padding(end = Dimensions.bottomSpacer)
-                        ) {
-                            IconButton(
-                                icon = R.drawable.translate,
-                                color = if (translateEnabled == true) colorPalette()
-.text else colorPalette()
-.textDisabled,
-                                enabled = true,
-                                onClick = {},
-                                modifier = Modifier
-                                    .padding(all = 8.dp)
-                                    .size(18.dp)
-                                    .combinedClickable(
-                                        onClick = {
-                                            translateEnabled = !translateEnabled
-                                        },
-                                        onLongClick = {
-                                            SmartMessage(
-                                                context.resources.getString(R.string.info_translation),
-                                                context = context
-                                            )
-                                        }
-                                    )
-                            )
-                            BasicText(
-                                text = "“",
-                                style = typography().xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = (-8).dp)
-                                    .align(Alignment.Top)
-                            )
-
-                            var translatedText by remember { mutableStateOf("") }
-                            val nonTranslatedText by remember {
-                                mutableStateOf(
-                                    if (attributionsIndex == -1) {
-                                        description
-                                    } else {
-                                        description.substring(0, attributionsIndex)
-                                    }
-                                )
-                            }
-
-
-                            if (translateEnabled == true) {
-                                LaunchedEffect(Unit) {
-                                    val result = withContext(Dispatchers.IO) {
-                                        try {
-                                            translator.translate(
-                                                nonTranslatedText,
-                                                languageDestination,
-                                                Language.AUTO
-                                            ).translatedText
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                    }
-                                    translatedText =
-                                        if (result.toString() == "kotlin.Unit") "" else result.toString()
-                                }
-                            } else translatedText = nonTranslatedText
-
-                            BasicText(
-                                text = translatedText,
-                                style = typography().xxs.secondary.align(TextAlign.Justify),
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f)
-                            )
-
-                            BasicText(
-                                text = "„",
-                                style = typography().xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = 4.dp)
-                                    .align(Alignment.Bottom)
-                            )
-                        }
-
-                        if (attributionsIndex != -1) {
-                            BasicText(
-                                text = stringResource(R.string.from_wikipedia_cca),
-                                style = typography().xxs.color(
-                                    colorPalette()
-.textDisabled).align(
-                                    TextAlign.Start
-                                ),
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 16.dp)
-                                //.padding(endPaddingValues)
-                            )
-                        }
-
-                    }
                 }
 
                 item(key = "bottom") {

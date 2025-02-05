@@ -138,7 +138,7 @@ fun AlbumScreen(
                                 Database.upsert(
                                     Album(
                                         id = browseId,
-                                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else currentAlbumPage.album.title,
+                                        title = album?.title ?: currentAlbumPage.album.title,
                                         thumbnailUrl = if (album?.thumbnailUrl?.startsWith(
                                                 MODIFIED_PREFIX
                                             ) == true

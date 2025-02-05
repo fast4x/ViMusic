@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Previne redarea melodiilor cu limită de vârstă</string>
     <string name="cache_location_private">Privat</string>
     <string name="cache_location_system">Sistem</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Nu se poate redenumi un playlist lunar sau Piped</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Nu se poate redenumi un playlist lunar sau online sau piped</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Activează jurnalele de depanare</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Dacă este activat, creează un fișier jurnal pentru a evidenția erorile</string>
@@ -740,7 +740,7 @@
     <string name="social_reddit_info">Alătură-te comunității pe Reddit</string>
     <string name="sleep_timer_ended">Temporizatorul de somn s-a încheiat</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Join the community on Discord</string>
+    <string name="social_discord_info">Alăturate comunității pe Discord</string>
     <string name="discord_enable_rich_presence">Activează Rich Presence</string>
     <string name="discord_disconnect">Deconectează</string>
     <string name="discord_connect">Conectează</string>
@@ -894,6 +894,14 @@
     <string name="filter_by">Filtrează după</string>
     <string name="updating_playlist">Actualizarea a listei de redare. Vă rugăm să așteptați. Nu minimizați sau ieșiți din aplicație</string>
     <string name="updating_playlist_message">Actualizează melodiile cu ID-ul albumului lipsit</string>
-    <string name="syncing">Syncing...</string>
-    <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="syncing">Sincronizare...</string>
+    <string name="autosync_channels">Sincronizare automată a canale-rol abonate</string>
+    <string name="autosync_albums">Sincronizare automată a albumelor salvate</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Albumele salvate în Biblioteca Muzică Youtube nu pot fi redenumite</string>
+    <string name="ytm_library">Biblioteca YTM</string>
+    <string name="cannot_delete_from_online_playlists">Nu se pot șterge melodii dintr-un playlist online</string>
+    <string name="ytm_playlists">Playlist-uri YTM</string>
+    <string name="no_connection">Nici o conexiune</string>
+    <string name="unlink_from_ytm">Deconectează biblioteca Youtube</string>
 </resources>

@@ -21,7 +21,8 @@ sealed class Action {
     @Serializable
     data class AddPlaylistAction(
         val action: String = "ACTION_ADD_PLAYLIST",
-        val addedFullListId: String
+        val addedFullListId: String,
+        val dedupeOption: String = "DEDUPE_OPTION_CHECK"
     ) : Action()
 
     @Serializable

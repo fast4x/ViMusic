@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Prevenir reprodução de músicas com limitação de idade</string>
     <string name="cache_location_private">Privado</string>
     <string name="cache_location_system">Sistema</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Não é possível renomear uma playlist mensal ou piped</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Ativar log de depuração</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Se habilitado, crie um arquivo de log para destacar erros</string>
@@ -740,7 +740,7 @@
     <string name="social_reddit_info">Junte-se à comunidade do Reddit</string>
     <string name="sleep_timer_ended">O temporizador de suspensão terminou</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Join the community on Discord</string>
+    <string name="social_discord_info">Junte-se à comunidade no Discord</string>
     <string name="discord_enable_rich_presence">Ativar Presença Rica</string>
     <string name="discord_disconnect">Desconectado</string>
     <string name="discord_connect">Conectado</string>
@@ -887,13 +887,21 @@
     <string name="match_song">Recombinar esta Música</string>
     <string name="match_song_grid">Recombinar esta Música</string>
     <string name="songsnotfound">Músicas não encontradas</string>
-    <string name="swipe_Animation_No_Thumbnail">Swipe Animation</string>
+    <string name="swipe_Animation_No_Thumbnail">Animação ao deslizar</string>
     <string name="do_you_really_want_to_match_all">Do you really want to replace all the videos/unmatched songs with the matched songs? This action is irreversible</string>
     <string name="online_songs">Online Songs</string>
     <string name="explicit">Explicit</string>
     <string name="filter_by">Filter By</string>
     <string name="updating_playlist">Updating the Playlist. Please Wait. Do not Minimize or Exit the App</string>
     <string name="updating_playlist_message">Update the Songs with the Missing Album ID</string>
-    <string name="syncing">Syncing...</string>
+    <string name="syncing">Sincronizando...</string>
     <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="autosync_albums">Auto Sync Saved Albums</string>
+    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>
+    <string name="ytm_library">YTM Library</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
 </resources>
