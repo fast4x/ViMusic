@@ -48,7 +48,6 @@ import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.ThumbnailRoundness
@@ -143,10 +142,11 @@ fun ArtistScreenModern(
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    var isInYTMLibrary by remember { mutableStateOf(false) }
+    var artistInDatabase by remember { mutableStateOf<Artist?>(null) }
+
     Database.asyncTransaction {
         CoroutineScope(Dispatchers.IO).launch {
-            isInYTMLibrary = artist(browseId).firstOrNull()?.name?.startsWith(YTP_PREFIX) == true
+            artistInDatabase = artist(browseId).firstOrNull()
         }
     }
 
@@ -170,10 +170,11 @@ fun ArtistScreenModern(
                                 Database.upsert(
                                     Artist(
                                         id = browseId,
-                                        name = if (isInYTMLibrary) YTP_PREFIX+currentArtistPage.artist.info?.name else currentArtistPage.artist.info?.name,
+                                        name = currentArtistPage.artist.info?.name,
                                         thumbnailUrl = currentArtistPage.artist.thumbnail?.url,
                                         timestamp = System.currentTimeMillis(),
-                                        bookmarkedAt = currentArtist?.bookmarkedAt
+                                        bookmarkedAt = currentArtist?.bookmarkedAt,
+                                        isYoutubeArtist = artistInDatabase?.isYoutubeArtist == true
                                     )
                                 )
                             }

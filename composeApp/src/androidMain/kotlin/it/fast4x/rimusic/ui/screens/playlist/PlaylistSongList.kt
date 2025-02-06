@@ -86,7 +86,6 @@ import it.fast4x.rimusic.Database.Companion.like
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
 import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
@@ -305,7 +304,7 @@ fun PlaylistSongList(
                                         songId = mediaItem.mediaId,
                                         playlistId = playlistId,
                                         position = index
-                                    )
+                                    ).default()
                                 }
                                 ?.let( ::insertSongPlaylistMaps )
                 }
@@ -350,9 +349,7 @@ fun PlaylistSongList(
                     key = "header"
                 ) {
 
-                    val modifierArt = if (isLandscape) Modifier.fillMaxWidth() else Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f / 3)
+                    val modifierArt = Modifier.fillMaxWidth()
 
                     Box(
                         modifier = modifierArt
@@ -363,7 +360,7 @@ fun PlaylistSongList(
                                     AsyncImage(
                                         model = playlistPage!!.playlist.thumbnail?.url?.resize(
                                             1200,
-                                            900
+                                            1200
                                         ),
                                         contentDescription = "loading...",
                                         modifier = Modifier
@@ -704,7 +701,7 @@ fun PlaylistSongList(
                                                                             songId = song.asMediaItem.mediaId,
                                                                             playlistId = playlistPreview.playlist.id,
                                                                             position = position + index
-                                                                        )
+                                                                        ).default()
                                                                     )
                                                                 }
                                                             }.onFailure {
@@ -829,7 +826,7 @@ fun PlaylistSongList(
                                                                         songId = mediaItem.mediaId,
                                                                         playlistId = playlistId,
                                                                         position = index
-                                                                    )
+                                                                    ).default()
                                                                 }
                                                                 ?.let(::insertSongPlaylistMaps)
                                                         }

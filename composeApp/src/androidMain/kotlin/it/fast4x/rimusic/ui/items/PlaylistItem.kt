@@ -44,8 +44,6 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.MONTHLY_PREFIX
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.color

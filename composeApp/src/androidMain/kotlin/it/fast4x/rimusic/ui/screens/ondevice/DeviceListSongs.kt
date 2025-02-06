@@ -710,7 +710,7 @@ fun DeviceListSongs(
                                                             songId = song.asMediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                                 if(isYouTubeSyncEnabled())
@@ -729,7 +729,7 @@ fun DeviceListSongs(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                                 if(isYouTubeSyncEnabled())

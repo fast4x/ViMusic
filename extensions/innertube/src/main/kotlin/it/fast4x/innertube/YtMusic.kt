@@ -62,6 +62,7 @@ object YtMusic {
     }
 
     suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoId: String? = null) = runCatching {
+        println("YtMusic removeFromPlaylist params: playlistId: $playlistId, videoId: $videoId, setVideoId: $setVideoId")
             Innertube.removeFromPlaylist(Context.DefaultWeb.client, playlistId, videoId, setVideoId)
         }.onFailure {
             println("YtMusic removeFromPlaylist error: ${it.stackTraceToString()}")

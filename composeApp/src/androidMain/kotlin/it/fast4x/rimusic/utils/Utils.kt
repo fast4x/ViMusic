@@ -197,7 +197,8 @@ val Innertube.SongItem.asMediaItem: MediaItem
                         "artistNames" to authors?.filter { it.endpoint != null }
                             ?.mapNotNull { it.name },
                         "artistIds" to authors?.mapNotNull { it.endpoint?.browseId },
-                        EXPLICIT_BUNDLE_TAG to explicit
+                        EXPLICIT_BUNDLE_TAG to explicit,
+                        "setVideoId" to setVideoId,
                     )
                 )
                 .build()
@@ -779,11 +780,20 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
 
     Database.asyncTransaction {
         if (findSongIndex() != -1) {
-            deleteSongFromPlaylist(song.id, playlistId)
             if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
-                CoroutineScope(Dispatchers.IO).launch {
-                    YtMusic.removeFromPlaylist(playlist.browseId ?: "", song.id)
+                Database.asyncTransaction {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (removeYTSongFromPlaylist(
+                                song.id,
+                                playlist.browseId ?: "",
+                                playlist.id
+                            )
+                        )
+                            deleteSongFromPlaylist(song.id, playlist.id)
+
+                    }
                 }
+
             }
             if (matchedSong != null) {
                 if (songExist(matchedSong.asSong.id) == 0) {
@@ -794,7 +804,7 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                         songId = matchedSong.asMediaItem.mediaId,
                         playlistId = playlistId,
                         position = position
-                    )
+                    ).default()
                 )
                 insert(
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
@@ -835,7 +845,7 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                     songId = songNotFound.id,
                     playlistId = playlistId,
                     position = position
-                )
+                ).default()
             )
         }
     }

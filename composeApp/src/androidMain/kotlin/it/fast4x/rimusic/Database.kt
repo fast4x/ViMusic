@@ -2058,6 +2058,18 @@ interface Database {
     @Query("""
         SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
         FROM Song S 
+        INNER JOIN SongPlaylistMap SP ON S.id = SP.songId 
+        LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = S.id
+        WHERE SP.playlistId = :id 
+        ORDER BY SP.dateAdded
+    """)
+    fun sortSongsFromPlaylistByDateAdded( id: Long ): Flow<List<SongEntity>>
+
+    @Query("""
+        SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
+        FROM Song S 
         INNER JOIN songplaylistmap SP ON S.id = SP.songId 
         LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
@@ -2080,7 +2092,7 @@ interface Database {
             PlaylistSongSortBy.Title -> sortSongsFromPlaylistByTitle( id )
             PlaylistSongSortBy.Duration -> sortSongsFromPlaylistByDuration( id )
             PlaylistSongSortBy.DateLiked -> sortSongsFromPlaylistByLikedAt( id )
-            PlaylistSongSortBy.DateAdded -> sortSongsFromPlaylistByRowId( id )
+            PlaylistSongSortBy.DateAdded -> sortSongsFromPlaylistByDateAdded( id )
         }.map {
             it.run {
                 if( sortOrder == SortOrder.Descending )
@@ -2256,6 +2268,9 @@ interface Database {
 
     @Query("DELETE FROM SongPlaylistMap WHERE songId = :id and playlistId = :playlistId")
     fun deleteSongFromPlaylist(id: String, playlistId: Long)
+
+    @Query("SELECT setVideoId FROM SongPlaylistMap WHERE songId = :id and playlistId = :playlistId")
+    fun getSetVideoIdFromPlaylist(id: String, playlistId: Long): Flow<String?>
 
     @Query("DELETE FROM SongAlbumMap WHERE albumId = :id")
     fun clearAlbum(id: String)

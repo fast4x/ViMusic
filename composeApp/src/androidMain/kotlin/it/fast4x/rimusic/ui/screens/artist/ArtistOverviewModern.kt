@@ -68,7 +68,6 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
@@ -213,9 +212,7 @@ fun ArtistOverviewModern(
             ) {
 
                 item {
-                    val modifierArt = if (isLandscape) Modifier.fillMaxWidth() else Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(4f / 3)
+                    val modifierArt = Modifier.fillMaxWidth()
 
                     Box(
                         modifier = modifierArt
@@ -226,7 +223,7 @@ fun ArtistOverviewModern(
                                 AsyncImage(
                                     model = artistPage.artist.thumbnail?.url?.resize(
                                         1200,
-                                        900
+                                        1200
                                     ),
                                     contentDescription = "loading...",
                                     modifier = Modifier
@@ -239,7 +236,7 @@ fun ArtistOverviewModern(
                                             bottom = Dimensions.fadeSpacingBottom
                                         )
                                 )
-                                if (artist?.name?.startsWith(YTP_PREFIX) == true) {
+                                if (artist?.isYoutubeArtist == true) {
                                     Image(
                                         painter = painterResource(R.drawable.ytmusic),
                                         colorFilter = ColorFilter.tint(
@@ -353,14 +350,7 @@ fun ArtistOverviewModern(
                                                     if (it != null) {
                                                         YtMusic.unsubscribeChannel(it)
                                                         if (artist != null && browseId != null) {
-                                                            Database.updateArtistName(
-                                                                browseId,
-                                                                (artist?.name ?: "").replace(
-                                                                    YTP_PREFIX,
-                                                                    "",
-                                                                    true
-                                                                )
-                                                            )
+                                                            Database.update(artist!!.copy(isYoutubeArtist = false))
                                                         }
                                                     }
                                                 }
@@ -369,10 +359,7 @@ fun ArtistOverviewModern(
                                                     if (it != null) {
                                                         YtMusic.subscribeChannel(it)
                                                         if (artist != null && browseId != null) {
-                                                            Database.updateArtistName(
-                                                                browseId,
-                                                                YTP_PREFIX + artist?.name
-                                                            )
+                                                            Database.update(artist!!.copy(isYoutubeArtist = true))
                                                         }
                                                     }
                                                 }
@@ -607,6 +594,7 @@ fun ArtistOverviewModern(
                                                 thumbnailSizePx = artistThumbnailSizePx,
                                                 thumbnailSizeDp = artistThumbnailSizeDp,
                                                 disableScrollingText = disableScrollingText,
+                                                isYoutubeArtist = artist?.isYoutubeArtist == true,
                                                 modifier = Modifier.clickable(onClick = {
                                                     navController.navigate("${NavRoutes.artist.name}/${item.key}")
                                                 })

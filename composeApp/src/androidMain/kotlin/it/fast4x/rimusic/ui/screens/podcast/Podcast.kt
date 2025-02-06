@@ -226,7 +226,7 @@ fun Podcast(
                                 songId = mediaItem.mediaId,
                                 playlistId = playlistId,
                                 position = index
-                            )
+                            ).default()
                         }?.let( ::insertSongPlaylistMaps )
                 }
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)
@@ -553,7 +553,7 @@ fun Podcast(
                                                                         songId = song.asMediaItem.mediaId,
                                                                         playlistId = playlistPreview.playlist.id,
                                                                         position = position + index
-                                                                    )
+                                                                    ).default()
                                                                 )
                                                             }.onFailure {
                                                                 Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")

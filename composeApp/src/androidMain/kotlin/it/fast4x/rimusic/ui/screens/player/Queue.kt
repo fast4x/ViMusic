@@ -91,7 +91,6 @@ import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PopupType
@@ -1015,7 +1014,7 @@ fun Queue(
                                                             songId = song.mediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                             }
@@ -1040,7 +1039,7 @@ fun Queue(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                                 //Log.d("mediaItemPos", "add position $position")

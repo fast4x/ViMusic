@@ -16,8 +16,6 @@ import it.fast4x.rimusic.Database.Companion.getArtistsList
 import it.fast4x.rimusic.Database.Companion.preferitesArtistsByName
 import it.fast4x.rimusic.Database.Companion.update
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.PlaylistSongSortBy
@@ -32,8 +30,10 @@ import it.fast4x.rimusic.ui.components.tab.toolbar.DynamicColor
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -61,9 +61,9 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                 withContext(Dispatchers.IO) {
                     val playlistIdChecked =
                         if (remotePlaylist.key.startsWith("VL")) remotePlaylist.key.substringAfter("VL") else remotePlaylist.key
-                    println("Playlist ${localPlaylists?.map { it?.browseId }}")
+                    println("Playlist ${localPlaylists?.map { it.browseId }}")
                     var localPlaylist =
-                        localPlaylists?.find { it?.browseId == playlistIdChecked }
+                        localPlaylists?.find { it.browseId == playlistIdChecked }
 
                     println("Local playlist: $localPlaylist")
                     println("Remote playlist: $remotePlaylist")
@@ -113,11 +113,10 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
             }?.getOrNull()?.let { remotePlaylist ->
 
                 println("ytmPrivatePlaylistSync Remote playlist editable: ${remotePlaylist.isEditable}")
-                val playlistIdChecked =
-                    if (remotePlaylist.playlist.key.startsWith("VL")) remotePlaylist.playlist.key.substringAfter("VL") else remotePlaylist.playlist.key
 
+                // Update here playlist isEditable flag because library contain playlists but isEditable isn't always available
                 if (remotePlaylist.isEditable == true)
-                    Database.update(playlist.copy(browseId = playlistIdChecked))
+                    Database.update(playlist.copy(isEditable = true))
 
                 if (remotePlaylist.songs.isNotEmpty()) {
                     //Database.clearPlaylist(playlistId)
@@ -129,8 +128,9 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
                             SongPlaylistMap(
                                 songId = mediaItem.mediaId,
                                 playlistId = playlistId,
-                                position = position
-                            )
+                                position = position,
+                                setVideoId = mediaItem.mediaMetadata.extras?.getString("setVideoId"),
+                            ).default()
                         }.let(Database::insertSongPlaylistMaps)
                 }
                 runBlocking(Dispatchers.IO) {
@@ -172,16 +172,17 @@ suspend fun importYTMSubscribedChannels(): Boolean {
                     if (localArtist == null) {
                         localArtist = Artist(
                             id = remoteArtist.key,
-                            name = (YTP_PREFIX + remoteArtist.title),
+                            name = remoteArtist.title,
                             thumbnailUrl = remoteArtist.thumbnail?.url,
-                            bookmarkedAt = System.currentTimeMillis()
+                            bookmarkedAt = System.currentTimeMillis(),
+                            isYoutubeArtist = true
                         )
                         Database.insert(localArtist)
                     } else {
                         localArtist.copy(
-                            name = (YTP_PREFIX + remoteArtist.title),
                             bookmarkedAt = localArtist.bookmarkedAt ?: System.currentTimeMillis(),
-                            thumbnailUrl = remoteArtist.thumbnail?.url
+                            thumbnailUrl = remoteArtist.thumbnail?.url,
+                            isYoutubeArtist = true
                         ).let(::update)
                     }
 
@@ -190,8 +191,8 @@ suspend fun importYTMSubscribedChannels(): Boolean {
             }
             val Artists = getArtistsList().firstOrNull()
             Database.asyncTransaction {
-                Artists?.filter {artist -> artist?.name?.startsWith(YTP_PREFIX) == true && artist.id !in ytmArtists.map { it.key } }?.forEach { artist ->
-                    if (artist != null) delete(artist)
+                Artists?.filter {artist -> artist?.isYoutubeArtist == true && artist.id !in ytmArtists.map { it.key } }?.forEach { artist ->
+                    if (artist != null) update(artist.copy(isYoutubeArtist = false, bookmarkedAt = null))
                 }
             }
         }
@@ -230,16 +231,17 @@ suspend fun importYTMLikedAlbums(): Boolean {
                     if (localAlbum == null) {
                         localAlbum = Album(
                             id = remoteAlbum.key,
-                            title = (YTP_PREFIX + remoteAlbum.title) ?: "",
+                            title = remoteAlbum.title,
                             thumbnailUrl = remoteAlbum.thumbnail?.url,
                             bookmarkedAt = System.currentTimeMillis(),
                             year = remoteAlbum.year,
-                            authorsText = remoteAlbum.authors?.getOrNull(1)?.name
+                            authorsText = remoteAlbum.authors?.getOrNull(1)?.name,
+                            isYoutubeAlbum = true
                         )
                         Database.insert(localAlbum)
                     } else {
                         localAlbum.copy(
-                            title = YTP_PREFIX + localAlbum.title,
+                            isYoutubeAlbum = true,
                             bookmarkedAt = localAlbum.bookmarkedAt ?: System.currentTimeMillis(),
                             thumbnailUrl = remoteAlbum.thumbnail?.url)
                             .let(::update)
@@ -249,8 +251,8 @@ suspend fun importYTMLikedAlbums(): Boolean {
             }
             val Albums = getAlbumsList().firstOrNull()
             Database.asyncTransaction {
-                Albums?.filter {album -> album?.title?.startsWith(YTP_PREFIX) == true && album.id !in ytmAlbums.map { it.key } }?.forEach { album->
-                    if (album != null) delete(album)
+                Albums?.filter {album -> album?.isYoutubeAlbum == true && album.id !in ytmAlbums.map { it.key } }?.forEach { album->
+                    if (album != null) update(album.copy(isYoutubeAlbum = false, bookmarkedAt = null))
                 }
             }
         }
@@ -262,6 +264,30 @@ suspend fun importYTMLikedAlbums(): Boolean {
     } else
         return false
 }
+
+suspend fun removeYTSongFromPlaylist(
+    songId: String,
+    playlistBrowseId: String,
+    playlistId: Long,
+): Boolean {
+
+    println("removeYTSongFromPlaylist removeSongFromPlaylist params songId = $songId, playlistBrowseId = $playlistBrowseId, playlistId = $playlistId")
+
+    if (isYouTubeSyncEnabled()) {
+        Database.asyncTransaction {
+            CoroutineScope(Dispatchers.IO).launch {
+                val songSetVideoId = Database.getSetVideoIdFromPlaylist(songId, playlistId).firstOrNull()
+                println("removeYTSongFromPlaylist removeSongFromPlaylist songSetVideoId = $songSetVideoId")
+                if (songSetVideoId != null)
+                    YtMusic.removeFromPlaylist(playlistId = playlistBrowseId, videoId =  songId, setVideoId = songSetVideoId)
+            }
+        }
+
+        return true
+    } else
+        return false
+}
+
 
 @Composable
 fun autoSyncToolbutton(messageId: Int): MenuIcon = object : MenuIcon, DynamicColor, Descriptive {

@@ -182,7 +182,7 @@ fun BaseMediaItemGridMenu(
                         songId = mediaItem.mediaId,
                         playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
-                    )
+                    ).default()
                 )
             }
             if(isYouTubeSyncEnabled())
@@ -252,7 +252,7 @@ fun MiniMediaItemGridMenu(
                         songId = mediaItem.mediaId,
                         playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
                         position = position
-                    )
+                    ).default()
                 )
             }
 

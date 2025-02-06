@@ -47,8 +47,6 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.AlbumsType
@@ -169,8 +167,8 @@ fun HomeAlbums(
     LaunchedEffect( Unit, itemsToFilter, filterBy ) {
         items = when(filterBy) {
             FilterBy.All -> itemsToFilter
-            FilterBy.YoutubeLibrary -> itemsToFilter.filter { it.title?.startsWith(YTP_PREFIX) == true }
-            FilterBy.Local -> itemsToFilter.filterNot { it.title?.startsWith(YTP_PREFIX) == true }
+            FilterBy.YoutubeLibrary -> itemsToFilter.filter { it.isYoutubeAlbum }
+            FilterBy.Local -> itemsToFilter.filterNot { it.isYoutubeAlbum }
         }
 
     }
@@ -443,7 +441,7 @@ fun HomeAlbums(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
                                                                     position = position + index
-                                                                )
+                                                                ).default()
                                                             )
                                                         }
                                                     }
@@ -464,7 +462,8 @@ fun HomeAlbums(
                                     }
                                 )
                                 .clip(thumbnailShape()),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isYoutubeAlbum = album.isYoutubeAlbum
                         )
                     }
                 }

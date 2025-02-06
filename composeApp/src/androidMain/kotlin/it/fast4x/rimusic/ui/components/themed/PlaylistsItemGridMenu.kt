@@ -43,7 +43,6 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy

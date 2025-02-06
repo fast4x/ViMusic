@@ -43,7 +43,6 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.enums.ArtistSortBy
 import it.fast4x.rimusic.enums.ArtistsType
 import it.fast4x.rimusic.enums.NavigationBarPosition
@@ -155,8 +154,8 @@ fun HomeArtists(
     LaunchedEffect( Unit, itemsToFilter, filterBy ) {
         items = when(filterBy) {
             FilterBy.All -> itemsToFilter
-            FilterBy.YoutubeLibrary -> itemsToFilter.filter { it.name?.startsWith(YTP_PREFIX) == true }
-            FilterBy.Local -> itemsToFilter.filterNot { it.name?.startsWith(YTP_PREFIX) == true }
+            FilterBy.YoutubeLibrary -> itemsToFilter.filter { it.isYoutubeArtist }
+            FilterBy.Local -> itemsToFilter.filterNot { it.isYoutubeArtist }
         }
 
     }
@@ -319,7 +318,8 @@ fun HomeArtists(
                                                    search.onItemSelected()
                                                    onArtistClick( artist )
                                                }),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isYoutubeArtist = artist.isYoutubeArtist
                         )
                     }
                 }

@@ -29,4 +29,10 @@ data class SongPlaylistMap(
     val position: Int,
     val setVideoId: String? = null,
     val dateAdded: Long? = null
-)
+){
+    fun default(): SongPlaylistMap {
+        return copy(
+            dateAdded = System.currentTimeMillis()
+        )
+    }
+}

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
@@ -46,7 +45,8 @@ fun AlbumItem(
     alternative: Boolean = false,
     yearCentered: Boolean = true,
     showAuthors: Boolean = false,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubeAlbum: Boolean = false
 ) {
     AlbumItem(
         thumbnailUrl = album.thumbnailUrl,
@@ -59,7 +59,8 @@ fun AlbumItem(
         alternative = alternative,
         showAuthors = showAuthors,
         modifier = modifier,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubeAlbum = isYoutubeAlbum
     )
 }
 
@@ -100,7 +101,8 @@ fun AlbumItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showAuthors: Boolean? = false,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubeAlbum: Boolean = false
 ) {
     ItemContainer(
         alternative = alternative,
@@ -117,7 +119,7 @@ fun AlbumItem(
                     .clip(thumbnailShape())
                     .requiredSize(thumbnailSizeDp)
             )
-            if (title?.startsWith(YTP_PREFIX) == true) {
+            if (isYoutubeAlbum) {
                 Image(
                     painter = painterResource(R.drawable.ytmusic),
                     colorFilter = ColorFilter.tint(Color.Red.copy(0.75f).compositeOver(Color.White)),

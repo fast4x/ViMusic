@@ -165,6 +165,7 @@ import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.left
 import it.fast4x.rimusic.utils.lyricsSizeKey
 import it.fast4x.rimusic.utils.lyricsSizeLKey
+import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import it.fast4x.rimusic.utils.right
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
@@ -2014,12 +2015,13 @@ fun SongMatchingDialog(
                                     .padding(vertical = 10.dp)
                                     .clickable(onClick = {
                                         Database.asyncTransaction {
-                                            deleteSongFromPlaylist(songToRematch.id, playlistId)
                                             if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                    YtMusic.removeFromPlaylist(playlist.browseId ?: "", songToRematch.id)
+                                                    if (removeYTSongFromPlaylist(songToRematch.id, playlist.browseId ?: "", playlistId))
+                                                        deleteSongFromPlaylist(songToRematch.id, playlistId)
                                                 }
                                             }
+
                                             if (songExist(song.asSong.id) == 0) {
                                                 Database.insert(song.asMediaItem)
                                             }
@@ -2029,7 +2031,7 @@ fun SongMatchingDialog(
                                                     songId = song.asMediaItem.mediaId,
                                                     playlistId = playlistId,
                                                     position = position
-                                                )
+                                                ).default()
                                             )
                                             insert(
                                                 Album(id = song.album?.endpoint?.browseId ?: "", title = song.asMediaItem.mediaMetadata.albumTitle?.toString()),

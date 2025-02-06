@@ -233,7 +233,7 @@ fun HomeLibrary(
                     songId = song.id,
                     playlistId = plistId,
                     position = index
-                )
+                ).default()
             )
 
             if(album.id !=""){

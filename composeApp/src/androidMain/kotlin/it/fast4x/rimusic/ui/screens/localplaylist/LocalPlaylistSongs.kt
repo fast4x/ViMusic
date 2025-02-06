@@ -207,6 +207,7 @@ import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
 import it.fast4x.rimusic.utils.showPlaylistDescriptionEnabledKey
+import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import it.fast4x.rimusic.utils.updateLocalPlaylist
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -548,8 +549,9 @@ fun LocalPlaylistSongs(
                                 SongPlaylistMap(
                                     songId = mediaItem.mediaId,
                                     playlistId = playlistId,
-                                    position = position
-                                )
+                                    position = position,
+                                    setVideoId = mediaItem.mediaMetadata.extras?.getString("setVideoId"),
+                                ).default()
                             }.let(Database::insertSongPlaylistMaps)
                     }
                 }
@@ -753,7 +755,7 @@ fun LocalPlaylistSongs(
                                                         songId = song.id,
                                                         playlistId = plistId,
                                                         position = index
-                                                    )
+                                                    ).default()
                                                 )
                                             }
                                         }
@@ -1634,7 +1636,7 @@ fun LocalPlaylistSongs(
                                                                 songId = song.asMediaItem.mediaId,
                                                                 playlistId = toPlaylistPreview.playlist.id,
                                                                 position = position + index
-                                                            )
+                                                            ).default()
                                                         )
                                                     }
                                                     //Log.d("mediaItemPos", "added position ${position + index}")
@@ -1678,7 +1680,7 @@ fun LocalPlaylistSongs(
                                                                 songId = song.mediaId,
                                                                 playlistId = toPlaylistPreview.playlist.id,
                                                                 position = position + index
-                                                            )
+                                                            ).default()
                                                         )
                                                     }
                                                 }
@@ -2146,17 +2148,15 @@ fun LocalPlaylistSongs(
                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
                             } else if (playlistPreview?.playlist?.isEditable == true) {
                                 Database.asyncTransaction {
-                                    Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                                    Database.delete(
-                                        SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE)
-                                    )
+                                    deleteSongFromPlaylist(song.asMediaItem.mediaId,playlistId)
                                 }
                                 if (isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        playlistPreview?.playlist?.browseId?.let {
-                                            YtMusic.removeFromPlaylist(it, song.song.id)
+                                    Database.asyncTransaction {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            deleteSongFromPlaylist(song.song.id, playlistPreview?.playlist!!.id)
                                         }
                                     }
+
 
                                 if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                                     removeFromPipedPlaylist(

@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
@@ -46,7 +45,8 @@ fun ArtistItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showName: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubeArtist : Boolean = false
 ) {
     ArtistItem(
         thumbnailUrl = artist.thumbnailUrl,
@@ -57,7 +57,8 @@ fun ArtistItem(
         modifier = modifier,
         alternative = alternative,
         showName = showName,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubeArtist = isYoutubeArtist
     )
 }
 
@@ -68,7 +69,8 @@ fun ArtistItem(
     thumbnailSizeDp: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubeArtist : Boolean = false
 ) {
     ArtistItem(
         thumbnailUrl = artist.thumbnail?.url,
@@ -78,7 +80,8 @@ fun ArtistItem(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         alternative = alternative,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubeArtist = isYoutubeArtist
     )
 }
 
@@ -92,7 +95,8 @@ fun ArtistItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showName: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubeArtist : Boolean = false
 ) {
     ItemContainer(
         alternative = alternative,
@@ -109,7 +113,7 @@ fun ArtistItem(
                     .clip(thumbnailShape())
                     .requiredSize(thumbnailSizeDp)
             )
-            if (name?.startsWith(YTP_PREFIX) == true) {
+            if (isYoutubeArtist) {
                 Image(
                     painter = painterResource(R.drawable.ytmusic),
                     colorFilter = ColorFilter.tint(

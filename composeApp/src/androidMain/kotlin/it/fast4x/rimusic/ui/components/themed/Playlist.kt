@@ -25,8 +25,6 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.models.PlaylistPreview
