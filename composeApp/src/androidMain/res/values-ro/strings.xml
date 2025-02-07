@@ -897,11 +897,12 @@
     <string name="syncing">Sincronizare...</string>
     <string name="autosync_channels">Sincronizare automată a canale-rol abonate</string>
     <string name="autosync_albums">Sincronizare automată a albumelor salvate</string>
-    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="save_youtube_library">Save in the Youtube Library</string>
     <string name="cant_rename_Saved_albums">Albumele salvate în Biblioteca Muzică Youtube nu pot fi redenumite</string>
     <string name="ytm_library">Biblioteca YTM</string>
     <string name="cannot_delete_from_online_playlists">Nu se pot șterge melodii dintr-un playlist online</string>
     <string name="ytm_playlists">Playlist-uri YTM</string>
     <string name="no_connection">Nici o conexiune</string>
     <string name="unlink_from_ytm">Deconectează biblioteca Youtube</string>
+    <string name="unlink_from_yt">Unlink from Youtube</string>
 </resources>

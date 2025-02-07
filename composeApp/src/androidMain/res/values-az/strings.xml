@@ -897,11 +897,12 @@
     <string name="syncing">Sinxronlaşdırılır...</string>
     <string name="autosync_channels">Abunə olunan kanalları avtomatik sinxronizasiya et</string>
     <string name="autosync_albums">Auto Sync Saved Albums</string>
-    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="save_youtube_library">Save in the Youtube Library</string>
     <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>
     <string name="ytm_library">YTM Library</string>
     <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
     <string name="ytm_playlists">YTM Playlists</string>
     <string name="no_connection">No Connection</string>
     <string name="unlink_from_ytm">Unlink from Youtube Library</string>
+    <string name="unlink_from_yt">Unlink from Youtube</string>
 </resources>

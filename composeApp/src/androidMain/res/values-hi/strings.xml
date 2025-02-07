@@ -224,8 +224,8 @@
     <string name="listen_on_piped">पाइप्ड पर सुनें</string>
     <string name="listen_on_invidious">Invidious पर सुनें</string>
     <string name="disable_horizontal_swipe">क्षैतिज स्वाइप अक्षम करें</string>
-    <string name="disable_vertical_swipe">Disable song switching via Vertical swipe</string>
-    <string name="disable_vertical_swipe_secondary">It affects only when the Expanded Player is off</string>
+    <string name="disable_vertical_swipe">ऊपर स्वाइप से गाना स्विच करना बंद करें</string>
+    <string name="disable_vertical_swipe_secondary">यह केवल तब प्रभावित होता है जब विस्तारित प्लेयर बंद हो</string>
     <string name="disable_song_switching_via_swipe">स्वाइप के माध्यम से गाना स्विच करना अक्षम करें</string>
     <string name="interface_in_use">उपयोग में इंटरफ़ेस</string>
     <string name="user_interface">उपयोक्ता अंतरफलक</string>
@@ -354,7 +354,7 @@
     <string name="sort_year">वर्ष</string>
     <string name="sort_name">नाम</string>
     <string name="sort_songs_number">गीत संख्या</string>
-    <string name="sort_relative_listening_time">Relative Listening Time</string>
+    <string name="sort_relative_listening_time">सापेक्ष सुनने का समय</string>
     <string name="follow">फॉलो करें</string>
     <string name="following">फॉलोइंग</string>
     <string name="artist_subscribers">%s सब्सक्राइबर</string>
@@ -444,12 +444,12 @@
     <string name="last_week">पिछले सप्ताह</string>
     <string name="by_casual_played_song">कारणवश गाना बजाया</string>
     <string name="theme_material_you">मेटीरियल यू</string>
-    <string name="show_statistics_in_navigation_bar">Show statistics in navigation bar</string>
+    <string name="show_statistics_in_navigation_bar">नेविगेशन बार में आंकड़े दिखाएं</string>
     <string name="settings">सेटिंग्स</string>
     <string name="page_not_been_loaded">यह पेज सही से लोड नहीं हुआ ह, पेज को रिफ्रेश करे</string>
-    <string name="sorry_tips_are_not_available">Sorry, tips are not available for now.</string>
+    <string name="sorry_tips_are_not_available">क्षमा करें, टिप्स अभी उपलब्ध नहीं हैं।</string>
     <string name="library_collections">कलेक्शन</string>
-    <string name="info_show_hide_hidden_songs">Show/hide hidden songs</string>
+    <string name="info_show_hide_hidden_songs">छुपे हुए गानों को दिखाएं/छिपाएं</string>
     <string name="info_shuffle">शफल करें</string>
     <string name="info_includes_excludes_songs_on_the_device">Includes/Excludes songs on the device</string>
     <string name="info_enqueue_songs">Enqueue songs</string>
@@ -897,11 +897,12 @@
     <string name="syncing">Syncing...</string>
     <string name="autosync_channels">Auto Sync Subscribed Channels</string>
     <string name="autosync_albums">Auto Sync Saved Albums</string>
-    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="save_youtube_library">Save in the Youtube Library</string>
     <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>
     <string name="ytm_library">YTM Library</string>
     <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
     <string name="ytm_playlists">YTM Playlists</string>
     <string name="no_connection">No Connection</string>
     <string name="unlink_from_ytm">Unlink from Youtube Library</string>
+    <string name="unlink_from_yt">Unlink from Youtube</string>
 </resources>

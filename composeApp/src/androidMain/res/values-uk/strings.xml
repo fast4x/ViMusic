@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Запобігти відтворення пісень з обмеженням віку</string>
     <string name="cache_location_private">Приватний</string>
     <string name="cache_location_system">Система</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Неможливо перейменувати щомісячний або Piped плейлист</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Не вдається перейменувати місячний або piped плейлист</string>
     <string name="debug">НАЛАГОДЖЕННЯ</string>
     <string name="enable_log_debug">Увімкнути налагодження журналу</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Якщо увімкнено, створіть файл журналу щоб виділити помилки</string>
@@ -897,11 +897,12 @@
     <string name="syncing">Синхронізація...</string>
     <string name="autosync_channels">Автосинхронізація підписаних каналів</string>
     <string name="autosync_albums">Автосинхронізація збережених альбомів</string>
-    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="save_youtube_library">Зберегти у бібліотеці YouTube</string>
     <string name="cant_rename_Saved_albums">Неможливо перейменувати альбоми, збережені в бібліотеці Youtube</string>
     <string name="ytm_library">Бібліотека YTM</string>
     <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
     <string name="ytm_playlists">YTM Playlists</string>
     <string name="no_connection">No Connection</string>
     <string name="unlink_from_ytm">Unlink from Youtube Library</string>
+    <string name="unlink_from_yt">Unlink from Youtube</string>
 </resources>

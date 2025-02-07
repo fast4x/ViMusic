@@ -900,11 +900,12 @@ Volume BAS : titre précédent</string>
     <string name="syncing">Synchronisation...</string>
     <string name="autosync_channels">Synchronisation automatique des chaînes souscrites</string>
     <string name="autosync_albums">Synchronisation automatique des albums enregistrés</string>
-    <string name="save_youtube_library">Save playlist to the Youtube Library</string>
+    <string name="save_youtube_library">Enregistrer la playlist dans la bibliothèque YouTube</string>
     <string name="cant_rename_Saved_albums">Impossible de renommer les albums enregistrés dans la bibliothèque YouTube Music</string>
     <string name="ytm_library">Bibliothèque YouTube Music</string>
-    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
-    <string name="ytm_playlists">YTM Playlists</string>
-    <string name="no_connection">No Connection</string>
-    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
+    <string name="cannot_delete_from_online_playlists">Impossible de supprimer des titres d\'une playlist en ligne</string>
+    <string name="ytm_playlists">Playlists YouTube Music</string>
+    <string name="no_connection">Pas de connexion</string>
+    <string name="unlink_from_ytm">Supprimer le lien de la bibliothèque YouTube</string>
+    <string name="unlink_from_yt">Se déconnecter de YouTube</string>
 </resources>

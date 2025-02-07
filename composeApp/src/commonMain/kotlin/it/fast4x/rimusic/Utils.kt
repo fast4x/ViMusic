@@ -12,17 +12,22 @@ const val LOCAL_KEY_PREFIX = "local:"
 const val YTP_PREFIX = "account:"
 const val YTEDITABLEPLAYLIST_PREFIX = "editable:"
 
+/**
+ * Assumption: all prefixes end with ":" and have at least 1 (other) character.
+ * Removes a "prefix of prefixes" including multiple times the same prefix (at different locations).
+ */
 fun cleanPrefix(text: String): String {
-    val cleanText = text.replace(PINNED_PREFIX, "", true)
-        .replace(MONTHLY_PREFIX, "", true)
-        .replace(PIPED_PREFIX, "", true)
-        .replace(YTEDITABLEPLAYLIST_PREFIX, "", true)
-        .replace(EXPLICIT_PREFIX, "", true)
-        .replace(MODIFIED_PREFIX, "", true)
-        .replace(YTP_PREFIX, "", true)
-
-
-    return cleanText
+    val splitText = text.split(":")
+    var i = 0
+    while (i < splitText.size-1) {
+        if ("${splitText[i]}:" !in listOf(PINNED_PREFIX, MODIFIED_PREFIX, MONTHLY_PREFIX, PIPED_PREFIX,
+                EXPLICIT_PREFIX, LOCAL_KEY_PREFIX, YTP_PREFIX, YTEDITABLEPLAYLIST_PREFIX)) {
+            break
+        }
+        i++
+    }
+    if(i >= splitText.size) return ""
+    return splitText.subList(i, splitText.size).joinToString(":")
 }
 
 fun cleanString(text: String): String {
