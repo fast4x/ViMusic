@@ -221,6 +221,13 @@ WARNING, the custom version is not an official release, download only if invited
         </a>
     </td>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
+        <a href=https://github.com/coolcarp>
+            <img src=https://avatars.githubusercontent.com/u/76832747?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=coolcarp/>
+            <br />
+            <sub style="font-size:14px"><b>coolcarp</b></sub>
+        </a>
+    </td>
+    <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/kaanelloed>
             <img src=https://avatars.githubusercontent.com/u/11068249?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=David/>
             <br />
@@ -241,6 +248,8 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>DarkCrypt</b></sub>
         </a>
     </td>
+</tr>
+<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/muhaaliss>
             <img src=https://avatars.githubusercontent.com/u/102979224?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=Muha Aliss/>
@@ -248,8 +257,6 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>Muha Aliss</b></sub>
         </a>
     </td>
-</tr>
-<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/sayyid5416>
             <img src=https://avatars.githubusercontent.com/u/78584556?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=Sayyid/>
@@ -285,6 +292,8 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>KalyaSc</b></sub>
         </a>
     </td>
+</tr>
+<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/Bnyro>
             <img src=https://avatars.githubusercontent.com/u/82752168?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=Bnyro/>
@@ -292,8 +301,6 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>Bnyro</b></sub>
         </a>
     </td>
-</tr>
-<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/25huizengek1>
             <img src=https://avatars.githubusercontent.com/u/50515369?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=25huizengek1/>
@@ -329,6 +336,8 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>Luigi Russo</b></sub>
         </a>
     </td>
+</tr>
+<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/locxter>
             <img src=https://avatars.githubusercontent.com/u/54595101?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=Luca Schultz/>
@@ -336,20 +345,11 @@ WARNING, the custom version is not an official release, download only if invited
             <sub style="font-size:14px"><b>Luca Schultz</b></sub>
         </a>
     </td>
-</tr>
-<tr>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
         <a href=https://github.com/davidsalido>
             <img src=https://avatars.githubusercontent.com/u/46091673?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=davidsalido/>
             <br />
             <sub style="font-size:14px"><b>davidsalido</b></sub>
-        </a>
-    </td>
-    <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
-        <a href=https://github.com/coolcarp>
-            <img src=https://avatars.githubusercontent.com/u/76832747?v=4 width="60;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px" alt=coolcarp/>
-            <br />
-            <sub style="font-size:14px"><b>coolcarp</b></sub>
         </a>
     </td>
     <td align="center" style="word-wrap: break-word; width: 90.0; height: 90.0">
