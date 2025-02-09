@@ -896,6 +896,7 @@
     <string name="updating_playlist_message">Update the Songs with the Missing Album ID</string>
     <string name="syncing">Syncing...</string>
     <string name="autosync_channels">Auto Sync Subscribed Channels</string>
+    <string name="playlist_description">playlist description</string>
     <string name="autosync_albums">Auto Sync Saved Albums</string>
     <string name="save_youtube_library">Save playlist to the Youtube Library</string>
     <string name="cant_rename_Saved_albums">Cannot Rename Albums saved in the Youtube Music Library</string>

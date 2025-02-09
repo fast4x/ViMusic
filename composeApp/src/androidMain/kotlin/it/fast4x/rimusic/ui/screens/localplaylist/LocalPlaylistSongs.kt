@@ -40,6 +40,7 @@ import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.ripple
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -74,6 +75,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.Lifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -88,7 +91,9 @@ import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.NextBody
+import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.requests.relatedSongs
 import it.fast4x.innertube.utils.completed
 import it.fast4x.rimusic.Database
@@ -177,6 +182,8 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
+import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.PlaylistSongsTypeFilter
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
@@ -199,6 +206,7 @@ import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
+import it.fast4x.rimusic.utils.showPlaylistDescriptionEnabledKey
 import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.updateLocalPlaylist
@@ -234,6 +242,7 @@ fun LocalPlaylistSongs(
     var playlistSongsSortByPosition by persistList<SongEntity>("localPlaylist/$playlistId/songs")
     var playlistPreview by persist<PlaylistPreview?>("localPlaylist/playlist")
     val thumbnailUrl = remember { mutableStateOf("") }
+    val isPlaylistDescriptionEnabled = rememberPreference(showPlaylistDescriptionEnabledKey,true)
 
 
     var sortBy by rememberPreference(playlistSongSortByKey, PlaylistSongSortBy.Title)
@@ -392,6 +401,25 @@ fun LocalPlaylistSongs(
         }?.toLong() ?: 0
     }
 
+    var playlistDescription by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(playlistPreview?.playlist?.browseId) {
+        playlistPreview?.playlist?.browseId?.let { browseId ->
+            Innertube.playlistPage(BrowseBody(browseId = browseId))
+//                ?.completed()
+                ?.getOrNull()
+                ?.let { response ->
+                    playlistDescription = response.description
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.takeUnless { it.equals("null", ignoreCase = true) }
+//                    SmartMessage(
+//                        "Fetched playlist description: ${response.description}, title: ${response.title}, info: ${response.otherInfo}",
+//                        type = PopupType.Info,
+//                        context = context
+//                    )
+                }
+        }
+    }
 
     val thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
@@ -463,8 +491,6 @@ fun LocalPlaylistSongs(
                         pipedSession = pipedSession.toApiSession(),
                         id = UUID.fromString(cleanPrefix(playlistPreview?.playlist?.browseId ?: ""))
                     )
-
-
                 //onDelete()
                 navController.popBackStack()
             }
@@ -1089,7 +1115,20 @@ fun LocalPlaylistSongs(
                                 icon = painterResource(R.drawable.smart_shuffle)
                             )
                         }
-                        Spacer(modifier = Modifier.height(30.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
+
+                        if (isPlaylistDescriptionEnabled.value) {
+                            val description = playlistDescription ?: ""
+
+                            Text(
+                                text = description,
+                                color = colorPalette().text,
+                                textAlign = TextAlign.Left,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 4
+                            )
+                        }
+                         Spacer(modifier = Modifier.height(10.dp))
                     }
 
                     Column(
