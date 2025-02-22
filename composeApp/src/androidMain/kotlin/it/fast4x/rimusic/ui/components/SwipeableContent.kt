@@ -35,6 +35,7 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AlbumSwipeAction
 import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.enums.PlaylistSwipeAction
@@ -189,7 +190,7 @@ fun SwipeableQueueItem(
         } else if (!isYouTubeSyncEnabled()){
             mediaItemToggleLike(mediaItem)
             val message: String
-            val mTitle: String = mediaItem.mediaMetadata.title?.toString() ?: ""
+            val mTitle: String = cleanPrefix(mediaItem.mediaMetadata.title?.toString() ?: "")
             val mArtist: String = mediaItem.mediaMetadata.artist?.toString() ?: ""
             if (likedAt == -1L) {
                 message =
@@ -275,7 +276,7 @@ fun SwipeablePlaylistItem(
         } else if (!isYouTubeSyncEnabled()){
             mediaItemToggleLike(mediaItem)
             val message: String
-            val mTitle: String = mediaItem.mediaMetadata.title?.toString() ?: ""
+            val mTitle: String = cleanPrefix(mediaItem.mediaMetadata.title?.toString() ?: "")
             val mArtist: String = mediaItem.mediaMetadata.artist?.toString() ?: ""
             if (likedAt == -1L) {
                 message =

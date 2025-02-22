@@ -464,6 +464,7 @@ fun BuiltInPlaylistSongs(
                 BuiltInPlaylist.Downloaded -> context.resources.getString(R.string.downloaded)
                 BuiltInPlaylist.Offline -> context.resources.getString(R.string.cached)
                 BuiltInPlaylist.Top -> context.resources.getString(R.string.playlist_top)
+                BuiltInPlaylist.Disliked -> context.resources.getString(R.string.disliked)
             },
             placeholder = stringResource(R.string.enter_the_playlist_name),
             setValue = { text ->
@@ -518,6 +519,7 @@ fun BuiltInPlaylistSongs(
                         BuiltInPlaylist.Downloaded -> stringResource(R.string.downloaded)
                         BuiltInPlaylist.Offline -> stringResource(R.string.cached)
                         BuiltInPlaylist.Top -> stringResource(R.string.my_playlist_top).format(maxTopPlaylistItems.number)
+                        BuiltInPlaylist.Disliked -> stringResource(R.string.disliked)
                     },
                     iconId = R.drawable.search,
                     enabled = true,
@@ -547,6 +549,7 @@ fun BuiltInPlaylistSongs(
                             BuiltInPlaylist.Downloaded -> R.drawable.downloaded
                             BuiltInPlaylist.Offline -> R.drawable.sync
                             BuiltInPlaylist.Top -> R.drawable.trending
+                            BuiltInPlaylist.Disliked -> R.drawable.heart_dislike
                         },
                         colorTint = colorPalette().favoritesIcon,
                         name = when (builtInPlaylist) {
@@ -556,6 +559,7 @@ fun BuiltInPlaylistSongs(
                             BuiltInPlaylist.Downloaded -> stringResource(R.string.downloaded)
                             BuiltInPlaylist.Offline -> stringResource(R.string.cached)
                             BuiltInPlaylist.Top -> stringResource(R.string.playlist_top)
+                            BuiltInPlaylist.Disliked -> stringResource(R.string.disliked)
                         },
                         songCount = null,
                         thumbnailSizeDp = playlistThumbnailSizeDp,
@@ -1192,7 +1196,8 @@ fun BuiltInPlaylistSongs(
                                 when (builtInPlaylist) {
                                     BuiltInPlaylist.Favorites,
                                     BuiltInPlaylist.Downloaded,
-                                    BuiltInPlaylist.Top -> NonQueuedMediaItemMenuLibrary(
+                                    BuiltInPlaylist.Top,
+                                    BuiltInPlaylist.Disliked -> NonQueuedMediaItemMenuLibrary(
                                         navController = navController,
                                         mediaItem = song.asMediaItem,
                                         onDismiss = menuState::hide,

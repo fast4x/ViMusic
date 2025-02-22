@@ -238,6 +238,7 @@ import it.fast4x.rimusic.utils.autoDownloadSongKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
 import it.fast4x.rimusic.utils.customColorKey
+import it.fast4x.rimusic.utils.showDislikedPlaylistKey
 
 @Composable
 fun DefaultUiSettings() {
@@ -338,6 +339,8 @@ fun DefaultUiSettings() {
     showDownloadedPlaylist = true
     var showOnDevicePlaylist by rememberPreference(showOnDevicePlaylistKey, true)
     showOnDevicePlaylist = true
+    var showDislikedPlaylist by rememberPreference(showDislikedPlaylistKey, false)
+    showDislikedPlaylist = false
     var shakeEventEnabled by rememberPreference(shakeEventEnabledKey, false)
     shakeEventEnabled = false
     var useVolumeKeysToChangeSong by rememberPreference(useVolumeKeysToChangeSongKey, false)
@@ -612,6 +615,7 @@ fun UiSettings(
     var showMyTopPlaylist by rememberPreference(showMyTopPlaylistKey, true)
     var showDownloadedPlaylist by rememberPreference(showDownloadedPlaylistKey, true)
     var showOnDevicePlaylist by rememberPreference(showOnDevicePlaylistKey, true)
+    var showDislikedPlaylist by rememberPreference(showDislikedPlaylistKey, false)
     var showFloatingIcon by rememberPreference(showFloatingIconKey, false)
     var menuStyle by rememberPreference(menuStyleKey, MenuStyle.List)
     var transitionEffect by rememberPreference(transitionEffectKey, TransitionEffect.Scale)
@@ -1443,6 +1447,14 @@ fun UiSettings(
                 text = "",
                 isChecked = showOnDevicePlaylist,
                 onCheckedChange = { showOnDevicePlaylist = it }
+            )
+
+        if (search.input.isBlank() || "${stringResource(R.string.show)} ${stringResource(R.string.disliked)}".contains(search.input,true))
+            SwitchSettingEntry(
+                title = "${stringResource(R.string.show)} ${stringResource(R.string.disliked)}",
+                text = "",
+                isChecked = showDislikedPlaylist,
+                onCheckedChange = { showDislikedPlaylist = it }
             )
 
         /*

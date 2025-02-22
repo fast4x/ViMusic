@@ -250,6 +250,7 @@ fun HomeSongs(
                 BuiltInPlaylist.Downloaded -> context.resources.getString(R.string.downloaded)
                 BuiltInPlaylist.Offline -> context.resources.getString(R.string.cached)
                 BuiltInPlaylist.Top -> context.resources.getString(R.string.playlist_top)
+                BuiltInPlaylist.Disliked -> context.resources.getString(R.string.disliked)
             }
     }
 
@@ -392,6 +393,7 @@ fun HomeSongs(
                     )
             }
             BuiltInPlaylist.OnDevice -> flowOf()
+            BuiltInPlaylist.Disliked -> flowOf() // probably no need to implement
 
         }.flowOn( Dispatchers.IO ).distinctUntilChanged().collect {
              /*

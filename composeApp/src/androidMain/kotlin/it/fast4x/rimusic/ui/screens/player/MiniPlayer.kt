@@ -74,6 +74,7 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
@@ -90,8 +91,7 @@ import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.getLikedIcon
-import it.fast4x.rimusic.utils.getUnlikedIcon
+import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.isNetworkConnected
@@ -102,8 +102,10 @@ import it.fast4x.rimusic.utils.playPrevious
 import it.fast4x.rimusic.utils.positionAndDurationState
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.setDisLikeState
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.thumbnail
+import it.fast4x.rimusic.utils.unlikeYtVideoOrSong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -175,14 +177,15 @@ fun MiniPlayer(
     }
 
     var updateLike by rememberSaveable { mutableStateOf(false) }
+    var updateDislike by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(updateLike) {
+    LaunchedEffect(updateLike, updateDislike) {
         if (updateLike) {
             if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
                 SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
             } else if (!isYouTubeSyncEnabled()){
                 mediaItemToggleLike(mediaItem)
-                if (likedAt == null)
+                if (likedAt == null || likedAt == -1L)
                     SmartMessage(context.resources.getString(R.string.added_to_favorites), context = context)
                 else
                     SmartMessage(context.resources.getString(R.string.removed_from_favorites), context = context)
@@ -192,6 +195,27 @@ fun MiniPlayer(
                 }
             }
             updateLike = false
+        }
+        if (updateDislike) {
+            if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+            } else if (!isYouTubeSyncEnabled()){
+                Database.asyncTransaction {
+                    if (like(mediaItem.mediaId, setDisLikeState(likedAt)) == 0)
+                        insert(mediaItem, Song::toggleDislike)
+                    MyDownloadHelper.autoDownloadWhenLiked(context, mediaItem)
+                    }
+                if (likedAt == null || likedAt!! > 0L)
+                    SmartMessage(context.resources.getString(R.string.added_to_disliked), context = context)
+                else
+                    SmartMessage(context.resources.getString(R.string.removed_from_disliked), context = context)
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    // can currently not implement dislike for sync, so unliking the song
+                    unlikeYtVideoOrSong(mediaItem)
+                }
+            }
+            updateDislike = false
         }
     }
 
@@ -256,9 +280,11 @@ fun MiniPlayer(
                     imageVector = when (dismissState.targetValue) {
                         SwipeToDismissBoxValue.StartToEnd -> {
                             if (miniPlayerType == MiniPlayerType.Modern) ImageVector.vectorResource(R.drawable.play_skip_back) else
-                             if (likedAt == null)
-                             ImageVector.vectorResource(R.drawable.heart_outline)
-                             else ImageVector.vectorResource(R.drawable.heart)
+                                if (likedAt == null)
+                                    ImageVector.vectorResource(R.drawable.heart_outline)
+                                else if(likedAt == -1L)
+                                    ImageVector.vectorResource(R.drawable.heart_dislike)
+                                else ImageVector.vectorResource(R.drawable.heart)
                         }
                         SwipeToDismissBoxValue.EndToStart ->  ImageVector.vectorResource(R.drawable.play_skip_forward)
                         SwipeToDismissBoxValue.Settled ->  ImageVector.vectorResource(R.drawable.play)
@@ -455,10 +481,13 @@ fun MiniPlayer(
                 )
                 if (miniPlayerType == MiniPlayerType.Modern)
                  it.fast4x.rimusic.ui.components.themed.IconButton(
-                     icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
+                     icon = getLikeState(mediaItem.mediaId),
                      color = colorPalette().favoritesIcon,
                      onClick = {
                          updateLike = true
+                     },
+                     onLongClick = {
+                         updateDislike = true
                      },
                      modifier = Modifier
                          .rotate(rotationAngle)

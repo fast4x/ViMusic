@@ -158,6 +158,7 @@ import it.fast4x.rimusic.utils.addToYtLikedSongs
 import it.fast4x.rimusic.utils.addToYtPlaylist
 import it.fast4x.rimusic.utils.asAlbum
 import it.fast4x.rimusic.utils.isNetworkConnected
+import it.fast4x.rimusic.utils.mediaItemSetLiked
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
@@ -1113,12 +1114,8 @@ fun AlbumDetails(
                                                     SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
                                                 } else if (!isYouTubeSyncEnabled()){
                                                     songs.forEach { song ->
-                                                        val likedAt: Long? = song.likedAt
-                                                        if (likedAt == null) {
-                                                            mediaItemToggleLike(song.asMediaItem)
-                                                        }
+                                                        mediaItemSetLiked(song.asMediaItem)
                                                     }
-
                                                 } else {
                                                     val totalSongsToLike = songs.filter {
                                                         it.likedAt in listOf(-1L,null)
